@@ -44,7 +44,20 @@ try {
 function main() {
   const cfg = loadConfig();
   if (!cfg) {
-    log('no config yet; run /talking-to-dave:configure');
+    // Unconfigured install: never touch CLAUDE.md, but tell the session (hook
+    // stdout lands in model context) so configure gets offered, and say when
+    // an existing pre-plugin block is waiting to be migrated.
+    const mdPath = join(homedir(), '.claude', 'CLAUDE.md');
+    const md = existsSync(mdPath) ? readFileSync(mdPath, 'utf8') : '';
+    const b = md.indexOf(BEGIN);
+    if (b >= 0) {
+      const stamped = stampedRev(md, b);
+      process.stdout.write('talking-to-dave: found an existing contract block (rev ' + stamped + ') but no saved config. Offer /talking-to-dave:configure, which detects and preserves the block\'s choices.\n');
+      log('no config yet; existing block at rev ' + stamped + '; run /talking-to-dave:configure');
+    } else {
+      process.stdout.write('talking-to-dave: installed but not configured. Offer /talking-to-dave:configure when convenient.\n');
+      log('no config yet; run /talking-to-dave:configure');
+    }
     return;
   }
   const prefsPath = join(dataDir(), PREFS);
@@ -84,16 +97,21 @@ function main() {
     return;
   }
 
-  // The rev ends at the sentence period in the marker text, but contains
-  // periods itself, so stop at a period only when whitespace follows it.
-  const stamped = (md.slice(b, md.indexOf('\n', b)).match(/rev=(\S+?)\.?(?=\s|$)/) || [])[1] || 'unknown';
+  const stamped = stampedRev(md, b);
   if (md.slice(b, e + END.length) === block) {
     log('current at rev ' + version);
     return;
   }
   const backup = backup_(mdPath, md);
   writeFileSync(mdPath, md.slice(0, b) + block + md.slice(e + END.length));
+  process.stdout.write('talking-to-dave: contract block updated to rev ' + version + '.\n');
   log('swapped rev ' + stamped + ' -> ' + version + ' (backup ' + backup + ')');
+}
+
+/* The rev ends at the sentence period in the marker text, but contains
+ * periods itself, so stop at a period only when whitespace follows it. */
+function stampedRev(md, b) {
+  return (md.slice(b, md.indexOf('\n', b)).match(/rev=(\S+?)\.?(?=\s|$)/) || [])[1] || 'unknown';
 }
 
 function backup_(mdPath, content) {

@@ -98,6 +98,34 @@ test('no config means no writes at all', () => {
   assert.equal(sb.md(), '# Mine\n');
 });
 
+test('no config without a block nudges plain configure', () => {
+  const sb = sandbox(null);
+  writeFileSync(sb.mdPath, '# Mine\n');
+  const out = sb.run();
+  assert.ok(out.includes('installed but not configured'), out);
+  assert.ok(out.includes('/talking-to-dave:configure'), out);
+  assert.equal(sb.md(), '# Mine\n');
+});
+
+test('no config with an existing block nudges migration and writes nothing', () => {
+  const sb = sandbox(null);
+  const before = '<!-- BEGIN presentation-contract rev=2026-08-11. old -->\nOLD\n<!-- END presentation-contract -->\n';
+  writeFileSync(sb.mdPath, before);
+  const out = sb.run();
+  assert.ok(out.includes('existing contract block (rev 2026-08-11)'), out);
+  assert.ok(out.includes('/talking-to-dave:configure'), out);
+  assert.equal(sb.md(), before);
+});
+
+test('a swap announces the new revision on stdout', () => {
+  const sb = sandbox({ name: 'Probe' });
+  writeFileSync(sb.mdPath, '<!-- BEGIN presentation-contract rev=0.0.1. old -->\nOLD\n<!-- END presentation-contract -->\n');
+  const out = sb.run();
+  assert.ok(out.includes('updated to rev ' + version), out);
+  const again = sb.run();
+  assert.ok(!again.includes('updated to rev'), again);
+});
+
 test('--chat-prefs prints and records the export', () => {
   const sb = sandbox({ name: 'Probe' });
   const out = sb.run('--chat-prefs');
