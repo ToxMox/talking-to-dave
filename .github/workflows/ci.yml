@@ -1,0 +1,18 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Golden-fixture and sync tests
+        run: node --test
+      - name: Site artifact is current
+        run: node scripts/build.mjs --check
+      - name: Plugin manifest validation
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate .
