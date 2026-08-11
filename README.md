@@ -15,16 +15,6 @@ claude plugin marketplace add ToxMox/talking-to-dave
 claude plugin install talking-to-dave@talking-to-dave
 ```
 
-Or from inside a Claude Code session, the same two steps as slash commands, entered one at a time (Claude Code takes a single slash command per prompt):
-
-```
-/plugin marketplace add ToxMox/talking-to-dave
-```
-
-```
-/plugin install talking-to-dave@talking-to-dave
-```
-
 Then, in any Claude Code session:
 
 ```
