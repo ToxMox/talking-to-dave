@@ -8,9 +8,18 @@ A glanceable reply contract for Claude Code, packaged as a plugin that generates
 
 ## Install
 
+From a terminal:
+
 ```
 claude plugin marketplace add ToxMox/talking-to-dave
 claude plugin install talking-to-dave@talking-to-dave
+```
+
+Or from inside a Claude Code session, the same two steps as slash commands:
+
+```
+/plugin marketplace add ToxMox/talking-to-dave
+/plugin install talking-to-dave@talking-to-dave
 ```
 
 Then, in any Claude Code session:
