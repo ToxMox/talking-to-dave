@@ -6,6 +6,21 @@ A glanceable reply contract for Claude Code, packaged as a plugin that generates
 
 **Docs, full rule preview, and the claude.ai companion text: <https://toxmox.github.io/talking-to-dave/>**
 
+## Install
+
+```
+claude plugin marketplace add ToxMox/talking-to-dave
+claude plugin install talking-to-dave@talking-to-dave
+```
+
+Then, in any Claude Code session:
+
+```
+/talking-to-dave:configure
+```
+
+**Contents**: [The problem](#the-problem) · [What a reply looks like](#what-a-reply-looks-like) · [The anchor palette](#the-anchor-palette) · [Who it is for](#who-it-is-for) · [How it works](#how-it-works) · [The four skills](#the-four-skills) · [What it writes, and where](#what-it-writes-and-where) · [claude.ai chat preferences](#claudeai-chat-preferences) · [Requirements](#requirements) · [Uninstall](#uninstall) · [Development](#development)
+
 ## The problem
 
 Claude Code answers in whatever shape it feels like, so you reread every reply hunting for what happened and what it needs from you. This plugin installs a reply contract into your user-scope `~/.claude/CLAUDE.md`: anchor emoji open line 1 (what happened, how it is going, whether you are needed), a footer always closes with what is outstanding, and everything in between is built for scanning. "Dave" is the default name; the contract is generated around whatever name you pick.
@@ -85,19 +100,6 @@ Anyone who scans replies instead of reading them top to bottom: ADHD readers fir
 - **Updates.** A new plugin version ships new contract text; `claude plugin update talking-to-dave` pulls it, and the next session start swaps the block. Your saved options survive updates because they live in the data directory, not in the plugin.
 - **Live dialog enforcement.** If you set the dialog policy to `ban`, a PreToolUse hook blocks the AskUserQuestion dialog at the tool layer, so the rule holds even when the model forgets it.
 - **Auto-offer and migration.** While no config is saved, the session-start hook writes nothing and instead tells the session to offer `/talking-to-dave:configure`. If your CLAUDE.md already carries a contract block from before the plugin existed, configure detects its choices, name included, pre-fills them, and asks only about options that did not exist back then. The name is never guessed from git, the OS, or your account: either a prior block carries it or you are asked. After an update swaps the block, the hook announces the new revision in one line instead of updating silently.
-
-## Install
-
-```
-claude plugin marketplace add ToxMox/talking-to-dave
-claude plugin install talking-to-dave@talking-to-dave
-```
-
-Then, in any Claude Code session:
-
-```
-/talking-to-dave:configure
-```
 
 ## The four skills
 
