@@ -1,6 +1,8 @@
-/* Assembles site/talking-to-dave.html from site/src/page.html by inlining the
- * contract builder, so the page and the plugin can never drift. --check
- * rebuilds and compares against the committed artifact instead of writing. */
+/* Assembles site/talking-to-dave.html and site/index.html (the same page,
+ * duplicated so GitHub Pages serves it at the site root) from site/src/page.html
+ * by inlining the contract builder, so the page and the plugin can never drift.
+ * --check rebuilds and compares against the committed artifacts instead of
+ * writing. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pluginRoot, pluginVersion } from '../lib/node-helpers.mjs';
@@ -19,14 +21,18 @@ const src = readFileSync(join(pluginRoot, 'site', 'src', 'page.html'), 'utf8');
 if (!src.includes('/*INLINE:BUILDER*/')) throw new Error('INLINE:BUILDER marker missing from site/src/page.html');
 const out = src.replace('/*INLINE:BUILDER*/', () => builder);
 
-const target = join(pluginRoot, 'site', 'talking-to-dave.html');
+const targets = ['talking-to-dave.html', 'index.html'];
 if (process.argv.includes('--check')) {
-  if (readFileSync(target, 'utf8') !== out) {
-    console.error('site/talking-to-dave.html is stale; run: node scripts/build.mjs');
-    process.exit(1);
+  for (const name of targets) {
+    let current = '';
+    try { current = readFileSync(join(pluginRoot, 'site', name), 'utf8'); } catch {}
+    if (current !== out) {
+      console.error('site/' + name + ' is stale; run: node scripts/build.mjs');
+      process.exit(1);
+    }
   }
   console.log('site output is current');
 } else {
-  writeFileSync(target, out);
-  console.log('built site/talking-to-dave.html at version ' + version);
+  for (const name of targets) writeFileSync(join(pluginRoot, 'site', name), out);
+  console.log('built site/{' + targets.join(',') + '} at version ' + version);
 }
