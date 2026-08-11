@@ -84,6 +84,7 @@ Anyone who scans replies instead of reading them top to bottom: ADHD readers fir
 - **Auto-sync at session start.** A SessionStart hook regenerates the contract from your saved config and the installed plugin version, then compares it against what sits between the markers. Identical means no-op. Different (new plugin version, changed config, or a hand edit inside the markers) means the whole file is backed up to `CLAUDE.md.bak` first, then just the block is swapped. The hook fails open: it can never break session start.
 - **Updates.** A new plugin version ships new contract text; `claude plugin update talking-to-dave` pulls it, and the next session start swaps the block. Your saved options survive updates because they live in the data directory, not in the plugin.
 - **Live dialog enforcement.** If you set the dialog policy to `ban`, a PreToolUse hook blocks the AskUserQuestion dialog at the tool layer, so the rule holds even when the model forgets it.
+- **Auto-offer and migration.** While no config is saved, the session-start hook writes nothing and instead tells the session to offer `/talking-to-dave:configure`. If your CLAUDE.md already carries a contract block from before the plugin existed, configure detects its choices, name included, pre-fills them, and asks only about options that did not exist back then. The name is never guessed from git, the OS, or your account: either a prior block carries it or you are asked. After an update swaps the block, the hook announces the new revision in one line instead of updating silently.
 
 ## Install
 
