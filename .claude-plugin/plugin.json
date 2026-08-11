@@ -1,0 +1,13 @@
+{
+  "name": "talking-to-dave",
+  "version": "0.1.0",
+  "description": "A glanceable reply contract for Claude Code: anchor emoji, a footer that says what is needed from you, and a plugin that generates, installs, and updates it",
+  "author": {
+    "name": "ToxMox",
+    "url": "https://github.com/ToxMox"
+  },
+  "homepage": "https://github.com/ToxMox/talking-to-dave",
+  "repository": "https://github.com/ToxMox/talking-to-dave",
+  "license": "MIT",
+  "keywords": ["formatting", "replies", "presentation", "adhd", "claude-md"]
+}
