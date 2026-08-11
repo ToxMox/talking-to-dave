@@ -128,6 +128,20 @@ test('a swap announces the new revision on stdout', () => {
   assert.ok(!again.includes('updated to rev'), again);
 });
 
+test('a config in a sibling talking-to-dave data dir is found when the given dir is empty', () => {
+  const sb = sandbox(null);
+  const home = dirname(dirname(sb.mdPath));
+  const sibling = join(home, '.claude', 'plugins', 'data', 'talking-to-dave-talking-to-dave');
+  mkdirSync(sibling, { recursive: true });
+  writeFileSync(join(sibling, 'config.json'), JSON.stringify({ name: 'Probe' }));
+  writeFileSync(sb.mdPath, '<!-- BEGIN presentation-contract rev=0.0.1. old -->\nOLD\n<!-- END presentation-contract -->\n');
+  const out = sb.run();
+  assert.equal(sb.md(), expectedBlock({ name: 'Probe' }) + '\n');
+  assert.ok(!out.includes('no saved config'), out);
+  assert.equal(readdirSync(sb.data).length, 0);
+  assert.ok(existsSync(join(sibling, 'sync.log')));
+});
+
 test('a leaked foreign CLAUDE_PLUGIN_DATA is ignored in favor of the fallback', () => {
   const sb = sandbox(null);
   const home = dirname(dirname(sb.mdPath));
