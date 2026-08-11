@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Talking to Dave: a glanceable reply contract for Claude Code</title>
+<script>
+(function(){
+  var t=null;
+  try{t=localStorage.getItem('ttd-theme');}catch(e){}
+  if(t!=='light'&&t!=='dark'){
+    t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark';
+  }
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
+<style>
+:root{
+  --bg:#0e1116; --bg2:#161b23; --bg3:#1d2430; --fg:#e7eaf0; --dim:#98a2b3;
+  --border:#2b3342; --accent:#5cc8ff; --accent2:#8b7dff;
+  --green:#3fd68f; --red:#ff7a7a; --amber:#f2c14e;
+  --code:#10141b; --badge:#5cc8ff; --badgefg:#08131c;
+}
+:root[data-theme="light"]{
+  --bg:#f6f7f9; --bg2:#ffffff; --bg3:#eef1f5; --fg:#1b2430; --dim:#5b6676;
+  --border:#d5dbe4; --accent:#0b78c2; --accent2:#6a5cd0;
+  --green:#0f9159; --red:#c93b3b; --amber:#9a6b00;
+  --code:#f0f2f6; --badge:#0b78c2; --badgefg:#ffffff;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme]){
+    --bg:#f6f7f9; --bg2:#ffffff; --bg3:#eef1f5; --fg:#1b2430; --dim:#5b6676;
+    --border:#d5dbe4; --accent:#0b78c2; --accent2:#6a5cd0;
+    --green:#0f9159; --red:#c93b3b; --amber:#9a6b00;
+    --code:#f0f2f6; --badge:#0b78c2; --badgefg:#ffffff;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--bg); color:var(--fg);
+  font:16px/1.55 system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  overflow-x:hidden;
+}
+main{max-width:78rem; margin:0 auto; padding:0 1.1rem 4rem}
+h1{font-size:1.9rem; line-height:1.2; margin:.2rem 0 .4rem}
+h2{font-size:1.35rem; margin:2.6rem 0 .7rem}
+h3{font-size:1.02rem; margin:1rem 0 .4rem}
+section{scroll-margin-top:3.7rem}
+.stickynav{
+  position:fixed; top:0; left:0; right:0; z-index:50;
+  background:var(--bg); border-bottom:1px solid var(--border);
+  padding:.42rem 1.1rem; transform:translateY(-101%); transition:transform .18s ease;
+}
+.stickynav.on{transform:none}
+.stickynav .toc{
+  max-width:78rem; margin:0 auto; flex-wrap:nowrap;
+  overflow-x:auto; scrollbar-width:thin;
+}
+.stickynav .toc a{white-space:nowrap}
+.stickynav .toc a[aria-current="true"]{color:var(--accent); border-color:var(--accent); background:var(--bg3)}
+@media (prefers-reduced-motion: reduce){.stickynav{transition:none}}
+section>p{max-width:70ch}
+.skick{
+  display:block; font:700 .68rem/1.4 system-ui,sans-serif; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--dim); margin-bottom:.12rem;
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+p{margin:.55rem 0}
+a{color:var(--accent)}
+code{
+  font-family:ui-monospace,Consolas,"Cascadia Mono",Menlo,monospace;
+  font-size:.9em; background:var(--code); border:1px solid var(--border);
+  border-radius:4px; padding:.08em .3em;
+}
+pre{
+  font-family:ui-monospace,Consolas,"Cascadia Mono",Menlo,monospace;
+  font-size:.85rem; line-height:1.5; background:var(--code);
+  border:1px solid var(--border); border-radius:8px;
+  padding:.8rem .9rem; overflow-x:auto; margin:.5rem 0;
+  white-space:pre;
+}
+pre code{background:none;border:0;padding:0}
+.copywrap{position:relative}
+.copywrap pre{padding-top:2.2rem}
+.copybtn{
+  position:absolute; top:.45rem; right:.45rem;
+  font:600 .74rem/1 system-ui,sans-serif; color:var(--fg);
+  background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+  padding:.35rem .6rem; cursor:pointer;
+}
+.copybtn:hover{border-color:var(--accent)}
+.copybtn.ok{color:var(--green); border-color:var(--green)}
+.inlinebtn{
+  font:600 .78rem/1 system-ui,sans-serif; color:var(--fg);
+  background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+  padding:.42rem .7rem; cursor:pointer;
+}
+.inlinebtn:hover{border-color:var(--accent)}
+.inlinebtn.ok{color:var(--green); border-color:var(--green)}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+.hero{padding:2.2rem 0 .4rem}
+.herotop{display:flex; align-items:center; justify-content:space-between; gap:1rem}
+.herogrid{
+  display:grid; gap:1.4rem 2.6rem; align-items:start; margin-top:.2rem;
+  grid-template-columns:minmax(0,1fr);
+}
+@media (min-width:900px){.herogrid{grid-template-columns:minmax(0,1.05fr) minmax(21rem,.95fr)}}
+.hero .pitch{color:var(--dim); font-size:1.05rem; margin:.55rem 0 0; max-width:66ch}
+.herodemo{
+  background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+  padding:.85rem 1rem 1rem;
+}
+.hdlabel{
+  font:700 .68rem/1.4 system-ui,sans-serif; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--dim); margin-bottom:.5rem;
+}
+.hdline{
+  background:var(--code); border:1px solid var(--border); border-radius:8px;
+  padding:.6rem .7rem; font-size:.93rem;
+}
+.hdline .cl{font-size:1.1rem; letter-spacing:.12em; margin-right:.3rem}
+.hdkeys{list-style:none; margin:.7rem 0 0; padding:0; display:grid; gap:.45rem}
+.hdkeys li{display:flex; gap:.6rem; align-items:baseline; font-size:.87rem; color:var(--dim)}
+.hdkeys .e{font-size:1.05rem; flex:0 0 1.3rem; text-align:center}
+.hdkeys b{color:var(--fg); font-weight:700}
+.sechead{
+  display:grid; gap:.2rem 2.6rem; align-items:start;
+  grid-template-columns:minmax(0,1fr);
+  margin:2.9rem 0 1.1rem; padding-top:1.1rem; border-top:1px solid var(--border);
+}
+@media (min-width:900px){
+  .sechead{grid-template-columns:minmax(14rem,23rem) minmax(0,1fr); align-items:baseline}
+}
+.sechead h2{margin:0; padding:0; border-top:0; font-size:1.5rem}
+.sechead .lede{margin:0; color:var(--dim); max-width:68ch}
+.prose{margin:0; padding-left:1.2rem}
+.prose li{margin:.4rem 0}
+.prose li::marker{color:var(--accent)}
+.prose strong{color:var(--fg)}
+.kicker{color:var(--accent); font-weight:700; letter-spacing:.08em; text-transform:uppercase; font-size:.72rem}
+#themeToggle{
+  font-size:1.15rem; background:var(--bg3); color:var(--fg);
+  border:1px solid var(--border); border-radius:8px;
+  padding:.45rem .85rem; cursor:pointer; white-space:nowrap;
+}
+#themeToggle:hover{border-color:var(--accent)}
+.toc{display:flex; flex-wrap:wrap; gap:.4rem .5rem; margin:1rem 0 0; padding:0; list-style:none; font-size:.82rem}
+.toc a{
+  display:inline-block; padding:.25rem .6rem; border:1px solid var(--border);
+  border-radius:6px; text-decoration:none; color:var(--dim); background:var(--bg2);
+}
+.toc a:hover{color:var(--accent); border-color:var(--accent)}
+.reply{
+  background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+  padding:.9rem 1rem; font-size:.93rem; overflow-wrap:anywhere;
+}
+.reply p{margin:.45rem 0}
+.reply ul,.reply ol{margin:.35rem 0 .5rem; padding-left:1.4rem}
+.reply li{margin:.2rem 0}
+.rh3{color:var(--accent); font-weight:700; margin:.85rem 0 .25rem; font-size:.95rem}
+.cl{font-size:1.15rem; letter-spacing:.15em; margin-right:.35rem}
+.dimtx{color:var(--dim)}
+blockquote.warnq{
+  margin:.6rem 0; padding:.45rem .7rem; border-left:4px solid var(--amber);
+  background:var(--bg3); border-radius:0 8px 8px 0;
+}
+hr.fold{border:0; border-top:2px dashed var(--border); margin:.9rem 0}
+.reply table, .rcbody table{
+  border-collapse:collapse; font-size:.88rem; margin:.4rem 0; min-width:14rem;
+}
+.reply th,.reply td,.rcbody th,.rcbody td{
+  border:1px solid var(--border); padding:.3rem .55rem; text-align:left; vertical-align:top;
+}
+.reply th,.rcbody th{background:var(--bg3)}
+.scroll{overflow-x:auto; max-width:100%}
+.difffence{background:var(--code)}
+.dadd{color:var(--green)}
+.ddel{color:var(--red)}
+.tipwrap{position:relative; display:inline-flex}
+.qmark{
+  width:1.2rem; height:1.2rem; border-radius:50%; padding:0; cursor:help;
+  background:var(--bg3); color:var(--dim); border:1px solid var(--border);
+  font:700 .74rem/1 system-ui,sans-serif;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.qmark:hover,.qmark[aria-expanded="true"]{border-color:var(--accent); color:var(--fg)}
+.tip{
+  position:absolute; z-index:30; left:50%; transform:translateX(-50%);
+  bottom:calc(100% + .55rem); width:min(21rem,72vw);
+  background:var(--bg2); color:var(--fg); border:1px solid var(--accent);
+  border-radius:8px; padding:.55rem .7rem; text-align:left;
+  font:400 .84rem/1.45 system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  box-shadow:0 8px 22px rgba(0,0,0,.38);
+  opacity:0; pointer-events:none; transition:opacity .12s ease;
+}
+.tip.below{bottom:auto; top:calc(100% + .55rem)}
+.tip.on{opacity:1}
+@media (prefers-reduced-motion: reduce){.tip{transition:none}}
+.card{background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:.8rem .95rem}
+.card h3{margin-top:.1rem}
+.caption{color:var(--dim); font-size:.84rem; margin:.45rem 0 0}
+.clusterlive{
+  display:flex; flex-wrap:wrap; align-items:center; gap:.9rem;
+  background:var(--bg2); border:1px solid var(--accent); border-radius:10px;
+  padding:.8rem 1rem; margin-top:1rem;
+}
+#clusterOut{font-size:1.75rem; letter-spacing:.1em; white-space:nowrap}
+#clusterText{margin:0; font-size:.95rem}
+/* legend: live skeleton + anchor rail */
+.spot{display:grid; gap:1.2rem; grid-template-columns:minmax(0,1.35fr) minmax(21rem,1fr); align-items:start; margin-top:.8rem}
+@media (max-width:900px){.spot{grid-template-columns:minmax(0,1fr)}}
+.skslot{display:inline-block; padding:0 .1em}
+.skpart{transition:opacity .22s ease}
+.spot-active .skpart{opacity:.26}
+.spot-active .skpart.skhit{
+  opacity:1;
+  box-shadow:0 0 0 2px var(--accent);
+  border-radius:6px;
+}
+.chiprail h3{margin:.7rem 0 .3rem; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim)}
+.chiprail h3:first-child{margin-top:0}
+.chips{display:flex; flex-wrap:wrap; gap:.35rem}
+.chips.chipcol{flex-direction:column; align-items:stretch}
+.chip{
+  display:inline-flex; align-items:center; gap:.4rem;
+  background:var(--bg2); border:1px solid var(--border); border-radius:7px;
+  padding:.34rem .6rem; cursor:pointer; font:inherit; color:var(--fg); font-size:.8rem;
+}
+.chip .e{font-size:1.05rem; line-height:1}
+/* structure rows carry a numbered badge where anchor rows carry their glyph */
+.chip .n{
+  flex:0 0 auto; width:1.25rem; height:1.25rem; border-radius:50%;
+  background:var(--badge); color:var(--badgefg);
+  font:700 .72rem/1 system-ui,sans-serif;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+.chip:hover{border-color:var(--accent)}
+/* the three anchors currently composing the sample's cluster: a quieter mark
+   than the pressed one, so "live in a slot" and "selected now" stay distinct */
+.chip.live{border-color:var(--accent)}
+.railtabs{margin:0 0 .6rem}
+.railtabs .tab{font-size:.78rem; letter-spacing:.02em; padding:.3rem .65rem}
+.rail[hidden]{display:none}
+.chip[aria-pressed="true"]{border-color:var(--accent); background:var(--bg3); box-shadow:0 0 0 1px var(--accent)}
+.spotcap{display:flex; gap:.8rem; align-items:flex-start; margin-top:.8rem}
+.spotcap .big{font-size:2.4rem; line-height:1.1}
+.spotcap .slotlab{font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); font-weight:700}
+.spotcap p{margin:.15rem 0}
+/* scenario tabs + reply cards */
+.tabstrip{display:flex; flex-wrap:wrap; gap:.4rem; margin:.7rem 0 .6rem}
+.tab{
+  font-size:1.05rem; letter-spacing:.12em; color:var(--fg);
+  background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+  padding:.45rem .7rem; cursor:pointer;
+}
+.tab:hover{border-color:var(--accent)}
+.tab[aria-selected="true"]{border-color:var(--accent); background:var(--bg3); box-shadow:inset 0 -2px 0 var(--accent)}
+.tabpanel[hidden]{display:none}
+.rcard{border:1px solid var(--border); border-radius:12px; overflow:hidden; background:var(--bg2)}
+.rcbar{
+  display:flex; align-items:center; gap:.5rem; padding:.45rem .85rem;
+  background:var(--bg3); border-bottom:1px solid var(--border);
+  color:var(--dim); font:600 .72rem/1.5 system-ui,sans-serif;
+}
+.rcbar .dot{width:.5rem; height:.5rem; border-radius:50%; background:var(--green); flex:0 0 auto}
+.rcbar .mode{margin-left:auto; font-weight:500; opacity:.75}
+.rcbody{padding:.9rem 1.05rem; overflow-x:auto; font-size:.95rem; line-height:1.6}
+.rcbody p{margin:.5rem 0}
+.rcbody ul,.rcbody ol{margin:.4rem 0 .55rem; padding-left:1.4rem}
+.rcbody li{margin:.22rem 0}
+.rcbody a{color:var(--accent)}
+/* task lists: the progress device this surface actually draws */
+.tasks{list-style:none; margin:.45rem 0; padding-left:.1rem}
+.tasks li{margin:.24rem 0; display:flex; gap:.5rem; align-items:baseline}
+.tasks .box{flex:0 0 auto; width:1.5em; color:var(--dim)}
+.tasks li.done .box{color:var(--green)}
+.tasks li.done s{color:var(--dim)}
+/* rules grid */
+.rulegroup{margin-top:1.5rem}
+.rulegroup>h3{
+  font:700 .74rem/1.4 system-ui,sans-serif; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); margin:0 0 .55rem;
+}
+.rulegrid{display:grid; gap:1rem; grid-template-columns:minmax(0,1fr); align-items:stretch}
+@media (min-width:1000px){
+  .rulegrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rulegrid>.rulecard.wide{grid-column:1 / -1}
+}
+.rulecard{
+  background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+  padding:.75rem .9rem; display:flex; flex-direction:column;
+}
+.rulecard .rex{padding-top:.55rem}
+.rulecard[data-off="true"]{opacity:.62}
+.rtag{
+  font:700 .62rem/1 system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--dim); border:1px solid var(--border); border-radius:5px; padding:.25rem .4rem;
+}
+.rhead{display:flex; align-items:center; gap:.55rem}
+.rnum{
+  flex:0 0 auto; min-width:1.6rem; height:1.6rem; border-radius:7px;
+  background:var(--bg3); border:1px solid var(--border); color:var(--accent);
+  font:700 .82rem/1 system-ui,sans-serif;
+  display:flex; align-items:center; justify-content:center;
+}
+.rulecard h4{margin:0; font-size:1rem; line-height:1.25}
+.rulecard>p{margin:.4rem 0 0; font-size:.9rem}
+.rex{
+  background:var(--bg3); border:1px solid var(--border); border-radius:8px;
+  padding:.5rem .6rem; margin-top:.6rem; opacity:.88;
+}
+.rex:hover,.rex:focus-within{opacity:1}
+.rex .reply{background:transparent; border:0; padding:0; font-size:.87rem}
+.rex .copywrap pre{margin:0}
+/* configurator */
+.cfgwrap{display:grid; gap:1rem; grid-template-columns:minmax(0,1fr) minmax(0,1.05fr); margin:.8rem 0; align-items:start}
+@media (max-width:900px){.cfgwrap{grid-template-columns:minmax(0,1fr)}}
+/* clears the sticky section nav, which is on for most of this section */
+.cfgout{position:sticky; top:2.9rem; min-width:0}
+.cfg{min-width:0}
+.cfgout h3{margin-top:0}
+.outtabs{margin-top:0}
+.outtabs .tab{font-size:.78rem; letter-spacing:.02em; padding:.35rem .6rem}
+.outnote{color:var(--dim); font-size:.86rem; margin:.5rem 0 .15rem; max-width:70ch}
+.outnote[hidden]{display:none}
+.outnote p{margin:.3rem 0}
+.outnote strong{color:var(--fg)}
+.linkbtn{
+  background:none; border:0; padding:0; cursor:pointer;
+  color:var(--accent); font:inherit; font-size:.8rem; text-decoration:underline;
+}
+#genOut{max-height:62vh; overflow:auto}
+.namerow{display:flex; align-items:center; gap:.5rem; margin:.15rem 0 .7rem}
+.namerow label{font-size:.9rem; font-weight:700; white-space:nowrap}
+.namerow input[type="text"]{flex:1 1 auto}
+.optrow{display:flex; align-items:center; gap:.45rem}
+.optrow .opt{flex:0 1 auto}
+fieldset{border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem .8rem; margin:0; background:var(--bg2)}
+legend{font-weight:700; font-size:.85rem; padding:0 .35rem}
+.cfg label.opt{display:flex; gap:.5rem; align-items:baseline; margin:.32rem 0; font-size:.9rem; cursor:pointer}
+.cfg input[type="checkbox"]{accent-color:var(--accent); transform:translateY(1px)}
+.cfg input[type="text"],.cfg select{
+  font:inherit; color:var(--fg); background:var(--code); border:1px solid var(--border);
+  border-radius:6px; padding:.45rem .6rem; width:100%;
+}
+.cfg select{width:auto; flex:0 1 auto; cursor:pointer}
+.note{color:var(--dim); font-size:.8rem; margin:.4rem 0 0}
+details{background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:.5rem .8rem; margin:.5rem 0}
+summary{cursor:pointer; font-weight:700; font-size:.92rem}
+details[open] summary{margin-bottom:.3rem}
+#toTop{
+  position:fixed; right:1rem; bottom:1rem; z-index:40;
+  background:var(--bg2); color:var(--fg); border:1px solid var(--border);
+  border-radius:8px; padding:.5rem .85rem; cursor:pointer;
+  font:600 .8rem/1 system-ui,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.3);
+}
+#toTop:hover{border-color:var(--accent)}
+#toTop[hidden]{display:none}
+@media (max-width:640px){
+  h1{font-size:1.5rem}
+  #clusterOut{font-size:1.6rem}
+}
+</style>
+</head>
+<body>
+<nav class="stickynav" id="stickyNav" aria-label="Sections" hidden></nav>
+<main>
+
+<header class="hero" id="top" tabindex="-1">
+  <div class="herotop">
+    <div class="kicker">Reply-formatting system for Claude Code</div>
+    <button id="themeToggle" type="button" aria-label="Switch between light and dark theme">&#x1F319; Theme</button>
+  </div>
+  <div class="herogrid">
+    <div>
+    <h1>Talking to Dave: a glanceable reply contract for Claude Code</h1>
+    <p class="pitch">Claude Code answers in whatever shape it feels like, so you reread each reply hunting for what happened and what it wants from you. This page is a short set of formatting rules you paste into Claude Code once; after that every reply comes back in the same layout, using a small fixed set of emoji that always mean the same thing. Line 1 alone tells you what happened, how the work is going, and whether you are needed. Tick the features you want directly below, copy one prompt into Claude Code, and read the rest of the page whenever you feel like it. Built for ADHD-friendly visual anchoring, and for anyone who skims.</p>
+    </div>
+    <aside class="herodemo" aria-label="How one reply line reads">
+      <div class="hdlabel">Line 1 of every reply</div>
+      <div class="hdline">
+        <span class="cl">&#x1F680; &#x2600;&#xFE0F; &#x1F64B;</span> <strong>Importer revamp: parser stream launched; one decision needed below.</strong>
+      </div>
+      <ul class="hdkeys">
+        <li><span class="e" aria-hidden="true">&#x1F680;</span><span><b>What happened.</b> Launched, running in the background.</span></li>
+        <li><span class="e" aria-hidden="true">&#x2600;&#xFE0F;</span><span><b>How it is going.</b> On plan, no surprises.</span></li>
+        <li><span class="e" aria-hidden="true">&#x1F64B;</span><span><b>Whether you are needed.</b> Yes, one answer, at the bottom.</span></li>
+      </ul>
+    </aside>
+  </div>
+  <ul class="toc" aria-label="Table of contents">
+      <li><a href="#sec-install">Install</a></li>
+      <li><a href="#sec-gallery">Scenarios</a></li>
+      <li><a href="#sec-anatomy">Anatomy</a></li>
+      <li><a href="#sec-why">Why it works</a></li>
+      <li><a href="#sec-rules">Rules</a></li>
+      <li><a href="#sec-extras">Extras</a></li>
+  </ul>
+</header>
+
+<section id="sec-install" aria-labelledby="h-install">
+  <div class="sechead">
+    <h2 id="h-install"><span class="skick">Install</span>Install the plugin, then make it yours</h2>
+    <p class="lede">Two commands install it, and the plugin keeps the contract in your user-scope <code>~/.claude/CLAUDE.md</code> current from then on, so it governs <strong>every project</strong> on the machine. Tick options here to preview the result, then run <code>/talking-to-dave:configure</code> in a session to apply them for real. Everything regenerates live: rule numbering stays contiguous, the palette lists only enabled anchors, and disabled features leave no dangling references, in any combination. The rest of the page shows you what you just installed.</p>
+  </div>
+  <div class="cfgwrap">
+    <div class="cfg" id="cfgForm">
+      <fieldset>
+        <legend>Contract options</legend>
+        <div class="namerow">
+          <label for="cfgName">Name</label>
+          <input id="cfgName" type="text" value="Dave" maxlength="40" autocomplete="off" aria-label="Name to use throughout the generated contract">
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-name" aria-label="What the name field changes">?</button><span class="tip" role="tooltip" id="tip-name">Replaces "Dave" everywhere in the generated contract, including the section title, the input-label rule, and the decision-table rule. Remembered in this browser, so a later copy of this page starts with it already filled in.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optWeather" checked> WEATHER slot (effort mood)</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-weather" aria-label="What the WEATHER slot option does">?</button><span class="tip" role="tooltip" id="tip-weather">Adds slot 2 to the line-1 cluster: on plan, minor bumps, or off plan. Turning it OFF drops those three rows from the palette and collapses the cluster to the remaining slots, with slot numbering and the cluster wording adjusted to match.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optForecast" checked> FORECAST slot (will you be needed)</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-forecast" aria-label="What the FORECAST slot option does">?</button><span class="tip" role="tooltip" id="tip-forecast">Adds the walk-away / soon / needed-now / finished slot and pins the footer to it. Turning it OFF removes the forecast, parked, and footer rows from the palette, and the footer rule keeps its plain wording: "Next up:" with what happens next when nothing is needed, "Done." when the arc closes, with no anchor glyphs.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optTasks" checked> Glyph-led progress lists</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-tasks" aria-label="What the task-list arcs option does">?</button><span class="tip" role="tooltip" id="tip-tasks">Lets arcs of 3 or more steps render as a bullet list led by the done, running and failed anchors, plus block glyphs for a trend or a proportion. Turning it OFF keeps plain counts ("2 of 4 streams done") and nothing else.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optDocs" checked> Capability docs (full setup)</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-docs" aria-label="What the capability docs option does">?</button><span class="tip" role="tooltip" id="tip-docs">Installs the complete three-file setup: the contract gains a surface-pointer clause pointing at the two measured reference docs the plugin ships. Leave it OFF for a self-contained contract that depends on no other files.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optFold" checked> The fold (must-read separator)</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-fold" aria-label="What the fold option does">?</button><span class="tip" role="tooltip" id="tip-fold">Keeps the fold rule and with it the fixed wrap-up section order (anchor line, counts, what changed, verification, fold plus reference detail, footer last). Turning it OFF removes that rule entirely and renumbers the rest.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optDecision" checked> Decision tables</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-decision" aria-label="What the decision tables option does">?</button><span class="tip" role="tooltip" id="tip-decision">Keeps the rule that multi-option questions render as a mini table with a literal ASCII token to answer with. Turning it OFF removes the rule, so options are described in prose instead.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optDiff" checked> Diff fences for code changes</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-diff" aria-label="What the diff fence option does">?</button><span class="tip" role="tooltip" id="tip-diff">Code changes fence as diff. A readout may borrow the same fence only when a red line genuinely must catch the eye, since a pass/fail checklist is a glyph-led list instead. Turning it OFF drops the diff-fence clause from the markdown rule; fenced blocks still name their language.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optVisual" checked> Diagrams and charts</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-visual" aria-label="What the diagrams and charts option does">?</button><span class="tip" role="tooltip" id="tip-visual">Adds the draw-the-shape rule: structures (flows, states, architectures) render as inline diagram widgets, and quantitative comparisons as real charts, on surfaces that support them. Turning it OFF keeps replies text-only, and the remaining rules renumber.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optInteractive" checked> Interactive widgets and forms</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-interactive" aria-label="What the interactive widgets option does">?</button><span class="tip" role="tooltip" id="tip-interactive">Adds the interaction rule: sliders and live controls for teaching, clickable forms for structured input, widget buttons for decisions rich enough to want icons or subtitles. Turning it OFF keeps every exchange plain text.</span></span>
+        </div>
+        <div class="namerow">
+          <label for="selDialog">AskUserQuestion dialog</label>
+          <select id="selDialog" aria-label="AskUserQuestion dialog policy">
+            <option value="blockers" selected>blockers only</option>
+            <option value="free">allow freely</option>
+            <option value="ban">banned</option>
+          </select>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-dialog" aria-label="What the dialog policy changes">?</button><span class="tip" role="tooltip" id="tip-dialog">Policy for the pop-up question dialog (AskUserQuestion): reserved for blocking decisions, allowed whenever a small option set fits, or banned outright. The generated rule follows your pick, and a plugin hook enforces a ban live, with no settings edits needed.</span></span>
+        </div>
+        <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optEmdash" checked> Em/en-dash ban</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-emdash" aria-label="What the em-dash ban option does">?</button><span class="tip" role="tooltip" id="tip-emdash">Adds the global rule banning em-dashes and en-dashes across replies, code, docs, commits, and issues. Turning it OFF generates no rule about them at all, and the remaining rules renumber.</span></span>
+        </div>
+        <p class="note">Turning WEATHER or FORECAST off collapses the cluster gracefully: slot numbering, rule text, and the palette all adjust.</p>
+        <p class="note">Your name and ticks are saved in this browser, so a newer copy of this page opens with them already set. <button class="linkbtn" id="cfgReset" type="button">Reset to defaults</button></p>
+      </fieldset>
+    </div>
+    <div class="cfgout">
+      <div class="tabstrip outtabs" role="tablist" aria-label="What to view">
+        <button class="tab" role="tab" type="button" data-out="contract" aria-selected="true">Preview contract</button>
+        <button class="tab" role="tab" type="button" data-out="ethos" aria-selected="false">For Claude chat</button>
+      </div>
+      <div class="outnote" data-note="contract">
+        <p>&#x2B07;&#xFE0F; <strong>A read-only preview of the contract the plugin generates and maintains for you.</strong> Install once:</p>
+        <pre>claude plugin marketplace add ToxMox/talking-to-dave
+claude plugin install talking-to-dave@talking-to-dave</pre>
+        <p>Then run <code>/talking-to-dave:configure</code> in any session to apply your ticks for real. Updating later is <code>claude plugin update talking-to-dave</code>: the next session start swaps the installed block exactly, and anything you keep outside its BEGIN and END markers survives untouched.</p>
+      </div>
+      <div class="outnote" data-note="ethos" hidden>
+        <p>&#x2B07;&#xFE0F; <strong>For Claude chat, not Claude Code.</strong> Paste into claude.ai, Settings, then personal preferences. Chat reads nothing from disk, so it needs its own copy. In a session, <code>/talking-to-dave:chat-preferences</code> prints this same text from your saved config, ready to paste.</p>
+        <p>It is deliberately shorter, and an ethos rather than a rulebook (<a href="#x-chat">why</a>).</p>
+      </div>
+      <div class="copywrap"><pre id="genOut" tabindex="0" aria-label="Selected output"></pre></div>
+    </div>
+  </div>
+</section>
+<section id="sec-gallery" aria-labelledby="h-gallery">
+  <div class="sechead">
+    <h2 id="h-gallery"><span class="skick">Examples</span>Scenario gallery</h2>
+    <p class="lede">Six fake replies as the desktop app renders them, one per tab; each tab label is the scenario's cluster. All content is invented.</p>
+  </div>
+  <div class="tabstrip" role="tablist" aria-label="Scenario gallery">
+    <button class="tab" role="tab" type="button" id="tab-a" aria-controls="panel-a" aria-selected="true" aria-label="All-clear wrap-up: done, on plan, finished"><span aria-hidden="true">&#x2705; &#x2600;&#xFE0F; &#x1F3C1;</span></button>
+    <button class="tab" role="tab" type="button" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1" aria-label="Launched, input needed soon"><span aria-hidden="true">&#x1F680; &#x2600;&#xFE0F; &#x1F51C;</span></button>
+    <button class="tab" role="tab" type="button" id="tab-c" aria-controls="panel-c" aria-selected="false" tabindex="-1" aria-label="Failure: blocked, off plan, answer needed now"><span aria-hidden="true">&#x274C; &#x26C8;&#xFE0F; &#x1F64B;</span></button>
+    <button class="tab" role="tab" type="button" id="tab-d" aria-controls="panel-d" aria-selected="false" tabindex="-1" aria-label="Findings answer, nothing needed"><span aria-hidden="true">&#x1F50E; &#x2600;&#xFE0F; &#x1F7E2;</span></button>
+    <button class="tab" role="tab" type="button" id="tab-e" aria-controls="panel-e" aria-selected="false" tabindex="-1" aria-label="Decision needed now"><span aria-hidden="true">&#x26A0;&#xFE0F; &#x2600;&#xFE0F; &#x1F64B;</span></button>
+    <button class="tab" role="tab" type="button" id="tab-f" aria-controls="panel-f" aria-selected="false" tabindex="-1" aria-label="Gates readout, possible call coming"><span aria-hidden="true">&#x26A0;&#xFE0F; &#x1F324;&#xFE0F; &#x1F51C;</span></button>
+  </div>
+  <p class="note">Arrow keys switch scenarios.</p>
+
+  <div class="tabpanel" role="tabpanel" id="panel-a" aria-labelledby="tab-a" tabindex="0">
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>beacon</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x2705; &#x2600;&#xFE0F; &#x1F3C1;</span> <strong>Beacon migration complete: all four stores moved, old endpoints retired.</strong></p>
+        <p>&#x23F3; 4 of 4 stores moved</p>
+        <ul class="tasks">
+          <li><span class="box" aria-hidden="true">&#x2705;</span>Session store</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>Profile store</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>Preferences store</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>Token store</li>
+        </ul>
+        <p class="rh3">What changed</p>
+        <ul>
+          <li><strong>Session store</strong> now backed by the new cluster; dual-write removed.</li>
+          <li><strong>Profile store</strong> cut over with shadow reads matching across the full soak window before the flip.</li>
+          <li><strong>Old endpoints</strong> return 410 with a pointer to the new routes.</li>
+          <li><strong>Dual-write flags</strong> deleted; no dormant switches left behind.</li>
+        </ul>
+        <p class="rh3">Verification</p>
+        <div class="scroll"><table>
+          <thead><tr><th>gate</th><th>result</th></tr></thead>
+          <tbody>
+            <tr><td>smoke suite</td><td>61 of 61 green</td></tr>
+            <tr><td>integration</td><td>124 of 124 green</td></tr>
+            <tr><td>data parity</td><td>row counts and checksums match on all four stores</td></tr>
+          </tbody>
+        </table></div>
+        <hr class="fold">
+        <p class="dimtx">Reference depth: cutover order was sessions, profiles, prefs, tokens; the parity checker lives in <a href="#sec-gallery">tools/parity/check.py</a> and can re-run against any store; rollback scripts are retained for one release, then deleted. Safe to skip.</p>
+        <p>&#x1F3C1; <strong>Done.</strong></p>
+        <p>&#x1F4A4; <strong>Later, if you want:</strong> the retained rollback scripts can be deleted early instead of waiting out the release.</p>
+      </div>
+    </div>
+    <p class="caption">(a) Finished wrap-up. &#x2705; done + &#x2600;&#xFE0F; on plan + &#x1F3C1; finished: the arc is closed, the footer flies the flag, and the &#x1F4A4; line parks a zero-obligation idea.</p>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-b" aria-labelledby="tab-b" tabindex="0" hidden>
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>searchd</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x1F680; &#x2600;&#xFE0F; &#x1F51C;</span> <strong>Nightly index rebuild launched in the background; a schema choice arrives when it finishes.</strong></p>
+        <p class="rh3">Running now</p>
+        <ul>
+          <li><strong>Rebuild</strong> running against a copy; the live index is untouched and still serving.</li>
+          <li><strong>Checkpointing</strong> after every segment, so a crash resumes instead of restarting.</li>
+        </ul>
+        <p class="rh3">The choice that is coming</p>
+        <ul>
+          <li><strong>Layout A</strong> keys by document id: simpler, larger index.</li>
+          <li><strong>Layout B</strong> keys by term shard: smaller, needs a router table.</li>
+        </ul>
+        <p>Both layouts get measured sizes and query timings from the rebuilt copy, so the choice lands with numbers attached, not guesses.</p>
+        <p>&#x1F51C; <strong>Nothing needed yet:</strong> the layout choice arrives when the rebuild finishes, with measured sizes and timings attached.</p>
+      </div>
+    </div>
+    <p class="caption">(b) Launched, input needed soon. &#x1F51C; lives on line 1 as a forecast; the footer reads &#x1F51C; too, naming what is coming and what triggers it. Two running topics make this tier 3, which is why headers are fair game.</p>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-c" aria-labelledby="tab-c" tabindex="0" hidden>
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>release</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x274C; &#x26C8;&#xFE0F; &#x1F64B;</span> <strong>Release gate failed: the signing certificate was rejected; publish is blocked.</strong></p>
+        <p class="dimtx">Skim "What broke" and answer below; everything under the fold can wait.</p>
+        <p class="rh3">What broke</p>
+        <ul>
+          <li><strong>Signing step</strong> rejects the cert as not yet valid: the runner clock is skewed by days.</li>
+          <li><strong>Root cause</strong>: NTP is disabled in the runner base image, so clocks drift until a reprovision.</li>
+        </ul>
+        <blockquote class="warnq">&#x26A0;&#xFE0F; Do not re-run the publish job; every failed attempt burns a version number.</blockquote>
+        <p class="rh3">Already ruled out</p>
+        <ul>
+          <li><strong>The cert itself</strong>: re-validated locally, chain intact, dates correct.</li>
+          <li><strong>A single bad machine</strong>: sibling runners show the same image and the same skew; this is fleet-wide.</li>
+        </ul>
+        <hr class="fold">
+        <p class="dimtx">Log digest: openssl reports notBefore in the future by roughly the same offset on every runner; the base image pins the time-sync service off; skew grows linearly since provision date, consistent with a dead sync service rather than a bad clock battery. Safe to skip.</p>
+        <p>&#x1F64B; <strong>Needs you:</strong></p>
+        <ol>
+          <li>OK to reprovision the runner fleet with NTP enabled? (yes / no / free-form)</li>
+          <li>After the fix, burn one version number on a test publish, or wait for the next scheduled release? (burn / wait)</li>
+        </ol>
+      </div>
+    </div>
+    <p class="caption">(c) Failure. &#x274C; blocked + &#x26C8;&#xFE0F; off plan, worth skimming to steer + &#x1F64B; answer needed now. One warning blockquote, skim guidance up top, log depth below the fold.</p>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-d" aria-labelledby="tab-d" tabindex="0" hidden>
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>thumbs</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x1F50E; &#x2600;&#xFE0F; &#x1F7E2;</span> <strong>Root cause: the thumbnail cache key omits the locale, so localized renders collide.</strong></p>
+        <p class="rh3">Where</p>
+        <ul>
+          <li><strong>CacheKey.Build</strong> drops the locale when region equals default, so en-US and the default region share a key.</li>
+          <li><strong>Collision path</strong>: any two locales rendering the same asset id overwrite each other's thumbnail.</li>
+        </ul>
+        <p class="rh3">Evidence</p>
+        <ul>
+          <li><strong>Repro</strong>: render the same scene in two locales; the second render replaces the first in the cache.</li>
+          <li><strong>Cache dump</strong>: 312 keys, 41 with interleaved cross-locale write stamps, all in the default region.</li>
+        </ul>
+        <p class="rh3">Fix shape</p>
+        <ul>
+          <li><strong>Key change</strong>: include the locale unconditionally; one line in <code>CacheKey.Build</code>.</li>
+          <li><strong>Flush</strong>: one-time cache flush on deploy so stale collisions do not linger.</li>
+        </ul>
+        <hr class="fold">
+        <p class="dimtx">Reference depth: the region-equals-default shortcut dates to the first cache version, before localized renders existed; no other key component has a similar conditional. Safe to skip.</p>
+        <p>&#x1F7E2; <strong>Next up:</strong> on your word, the one-line key change and the one-time flush land together.</p>
+      </div>
+    </div>
+    <p class="caption">(d) Findings answer. &#x1F50E; findings + &#x2600;&#xFE0F; on plan + &#x1F7E2; walk away: nothing is waiting on you, and the footer's forward look names what happens on your go.</p>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-e" aria-labelledby="tab-e" tabindex="0" hidden>
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>thumbs</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x26A0;&#xFE0F; &#x2600;&#xFE0F; &#x1F64B;</span> <strong>Thumbnail store: two viable layouts plus a defer option; pick one and I proceed.</strong></p>
+        <p class="rh3">Where this came from</p>
+        <ul>
+          <li><strong>Current store</strong> mixes thumbnails into scene folders; duplicates and orphans accumulate.</li>
+          <li><strong>Both layouts</strong> pass the load tests; this is a shape choice, not a correctness one, which is why it comes to you.</li>
+        </ul>
+        <p>&#x1F64B; <strong>Needs you:</strong></p>
+        <ol><li>Layout choice (type the token alone; free-form welcome):</li></ol>
+        <div class="scroll"><table>
+          <thead><tr><th>type</th><th>option</th><th>consequence</th></tr></thead>
+          <tbody>
+            <tr><td><code>1a</code></td><td>content-addressed store</td><td>one-time full re-bake; duplicates vanish</td></tr>
+            <tr><td><code>1b</code></td><td>per-scene folders plus an index</td><td>no re-bake; the index must stay in sync</td></tr>
+            <tr><td><code>1c</code></td><td>defer until the asset browser lands</td><td>zero work now; browser ships without thumbnails</td></tr>
+          </tbody>
+        </table></div>
+        <p class="dimtx">Whichever token you type, the migration steps are the same shape; only the layout differs.</p>
+      </div>
+    </div>
+    <p class="caption">(e) Decision table. The "type" cell is the literal ASCII token to answer with: reply "1b" and nothing else is needed.</p>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" id="panel-f" aria-labelledby="tab-f" tabindex="0" hidden>
+    <div class="rcard">
+      <div class="rcbar"><span class="dot" aria-hidden="true"></span><span>release</span><span class="mode">Normal view</span></div>
+      <div class="rcbody">
+        <p><span class="cl">&#x26A0;&#xFE0F; &#x1F324;&#xFE0F; &#x1F51C;</span> <strong>Release gates: 3 of 4 green; perf budget is the holdout, retry running.</strong></p>
+        <p>&#x23F3; 3 of 4 gates green</p>
+        <ul class="tasks">
+          <li><span class="box" aria-hidden="true">&#x2705;</span>unit suite</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>integration</li>
+          <li><span class="box" aria-hidden="true">&#x23F3;</span>perf budget, retry running</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>packaging</li>
+        </ul>
+        <p class="rh3">Holdout detail</p>
+        <ul>
+          <li><strong>Cold start</strong> measures 2.4s against a 2.0s budget; the regression window matches the new plugin loader.</li>
+          <li><strong>Retry</strong> running with the loader's lazy path enabled; if it passes, the lazy path ships on by default.</li>
+        </ul>
+        <p class="rh3">If the retry stays red</p>
+        <ul>
+          <li><strong>Option shape</strong>: raise the budget with a recorded reason, or gate the loader behind a flag; that call comes to you only if needed.</li>
+        </ul>
+        <p>&#x1F51C; <strong>Nothing needed yet:</strong> if the perf retry stays red, a call on the budget follows immediately after it reports.</p>
+      </div>
+    </div>
+    <p class="caption">(f) Gates readout. The glyph-led list carries a verdict per gate; &#x1F51C; forecasts a possible budget call, and the footer matches it.</p>
+  </div>
+</section>
+<section id="sec-anatomy" aria-labelledby="h-anatomy">
+  <div class="sechead">
+    <h2 id="h-anatomy"><span class="skick">Legend + walkthrough</span>Anatomy of a reply</h2>
+    <p class="lede">One live sample reply, asked two questions. <strong>Anchors</strong> answers "what does this glyph mean, and where does it land": pick one and the sample dims to just that spot, then rewrites itself, words and glyphs together, so the sentences always match the state you built. <strong>Structure</strong> answers "what is this part of a reply called": the same sample, spotlit region by region. Each slot remembers your last pick, so the sample stays one running fake task (an importer revamp) seen in whatever state you compose, and the bar under it reads your composed cluster back in plain English. This is the reference; there is no separate summary table.</p>
+  </div>
+  <div class="spot" id="sec-palette">
+    <div>
+      <div class="reply spot-active" id="spotSkel" aria-label="Reply skeleton with every anchor in place">
+        <p><span class="cl"><span class="skpart skslot" id="skS1">&#x2705;</span> <span class="skpart skslot" id="skS2">&#x1F324;&#xFE0F;</span> <span class="skpart skslot" id="skS3">&#x1F64B;</span></span> <span class="skpart" id="skLine1"><strong>Importer revamp: parser stream done, fixtures green; one answer needed below.</strong></span></p>
+        <p><span class="skpart" id="skCountA">&#x23F3; 2 of 3 steps done</span></p>
+        <ul class="tasks skpart" id="skTasks">
+          <li><span class="box" aria-hidden="true">&#x2705;</span>grammar tables ported</li>
+          <li><span class="box" aria-hidden="true">&#x2705;</span>fixture suite regenerated</li>
+          <li><span class="box" aria-hidden="true">&#x23F3;</span>streaming tokenizer</li>
+        </ul>
+        <p class="rh3 skpart" id="skHead">What changed</p>
+        <ul class="skpart" id="skBullets"><li><strong>Parser core</strong> rewritten against the v2 grammar; old paths removed.</li></ul>
+        <p class="skpart" id="skSoon" hidden>A grammar-table decision lands shortly, with measured numbers attached.</p>
+        <div class="skpart" id="skInput">
+          <p>&#x2B07;&#xFE0F; Verify locally (paste as-is):</p>
+          <div class="copywrap"><pre>importctl bake --all</pre></div>
+        </div>
+        <blockquote class="warnq skpart" id="skWarn" hidden>&#x26A0;&#xFE0F; Legacy saves older than v1.3 do not round-trip yet.</blockquote>
+        <hr class="fold skpart" id="skFold">
+        <p class="dimtx skpart">Reference depth lives below the fold. Safe to skip.</p>
+        <div class="skpart" id="skNeeds"></div>
+      </div>
+      <div class="clusterlive">
+        <div id="clusterOut" aria-label="Composed cluster">&#x2705; &#x1F324;&#xFE0F; &#x1F64B;</div>
+        <p id="clusterText" aria-live="polite">The work is done, minor bumps, handled without you, but I need your input in this reply.</p>
+      </div>
+      <p class="note">The section header and the fold carry no reserved glyph of their own, which is why they only appear under Structure.</p>
+      <p><button id="copyPalette" class="inlinebtn" type="button" aria-label="Copy the full anchor palette as a markdown table">Copy palette as markdown</button></p>
+      <p class="note">Palette glyphs may also appear inline at exactly their palette meaning, so the pass, fail, and in-progress anchors belong in table cells and in prose wherever a verdict is reported; the cluster stays recognizable by position, not by rarity. Palette emojis live in replies only, never in file content. Other emojis are allowed sparingly, but never in a palette slot, never colliding with a palette meaning, and never so dense the anchors drown.</p>
+    </div>
+    <div class="chiprail" id="chipRail">
+      <div class="tabstrip railtabs" role="tablist" aria-label="What to inspect">
+        <button class="tab" role="tab" type="button" data-rail="anchors" aria-selected="true">Anchors</button>
+        <button class="tab" role="tab" type="button" data-rail="structure" aria-selected="false">Structure</button>
+      </div>
+      <div class="rail" id="railAnchors" role="group" aria-label="Palette anchors, grouped by slot">
+      <h3>Status (slot 1)</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="ok" aria-pressed="true"><span class="e" aria-hidden="true">&#x2705;</span><span>done / success</span></button>
+        <button class="chip" type="button" data-chip="rocket" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F680;</span><span>launched, running in background</span></button>
+        <button class="chip" type="button" data-chip="find" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F50E;</span><span>findings / answer / recommendation</span></button>
+        <button class="chip" type="button" data-chip="warn" aria-pressed="false"><span class="e" aria-hidden="true">&#x26A0;&#xFE0F;</span><span>partial, degraded, needs attention</span></button>
+        <button class="chip" type="button" data-chip="fail" aria-pressed="false"><span class="e" aria-hidden="true">&#x274C;</span><span>failed / blocked</span></button>
+      </div>
+      <h3>Weather (slot 2)</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="sun" aria-pressed="false"><span class="e" aria-hidden="true">&#x2600;&#xFE0F;</span><span>on plan, going well</span></button>
+        <button class="chip" type="button" data-chip="suncloud" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F324;&#xFE0F;</span><span>bumps, handled without you</span></button>
+        <button class="chip" type="button" data-chip="storm" aria-pressed="false"><span class="e" aria-hidden="true">&#x26C8;&#xFE0F;</span><span>off plan, skim to steer</span></button>
+      </div>
+      <h3>Forecast (slot 3)</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="green" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F7E2;</span><span>nothing needed, walk away</span></button>
+        <button class="chip" type="button" data-chip="soon" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F51C;</span><span>input needed soon</span></button>
+        <button class="chip" type="button" data-chip="hand" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F64B;</span><span>input needed now</span></button>
+        <button class="chip" type="button" data-chip="flag" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F3C1;</span><span>finished: arc closed, nothing next</span></button>
+      </div>
+      <h3>Counts</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="hour" aria-pressed="false"><span class="e" aria-hidden="true">&#x23F3;</span><span>progress counter</span></button>
+      </div>
+      <h3>Input label</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="down" aria-pressed="false"><span class="e" aria-hidden="true">&#x2B07;&#xFE0F;</span><span>paste-this label</span></button>
+      </div>
+      <h3>Warning</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="warnq" aria-pressed="false"><span class="e" aria-hidden="true">&#x26A0;&#xFE0F;</span><span>the one warning</span></button>
+      </div>
+      <h3>Footer</h3>
+      <div class="chips">
+        <button class="chip" type="button" data-chip="needH" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F64B;</span><span>items waiting on you</span></button>
+        <button class="chip" type="button" data-chip="needS" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F51C;</span><span>a decision is approaching</span></button>
+        <button class="chip" type="button" data-chip="needG" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F7E2;</span><span>next up: nothing needed</span></button>
+        <button class="chip" type="button" data-chip="needF" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F3C1;</span><span>done: arc closed</span></button>
+        <button class="chip" type="button" data-chip="zzz" aria-pressed="false"><span class="e" aria-hidden="true">&#x1F4A4;</span><span>parked idea, zero obligation</span></button>
+      </div>
+      </div>
+      <div class="rail" id="railStructure" role="group" aria-label="Parts of a reply, in order" hidden>
+        <h3>Parts of a reply, in order</h3>
+        <div class="chips chipcol">
+          <button class="chip" type="button" data-chip="stCluster" aria-pressed="false"><span class="n" aria-hidden="true">1</span><span>Mood cluster and bottom line</span></button>
+          <button class="chip" type="button" data-chip="stProgress" aria-pressed="false"><span class="n" aria-hidden="true">2</span><span>Progress line</span></button>
+          <button class="chip" type="button" data-chip="stBody" aria-pressed="false"><span class="n" aria-hidden="true">3</span><span>Section headers and bullets</span></button>
+          <button class="chip" type="button" data-chip="stWarn" aria-pressed="false"><span class="n" aria-hidden="true">4</span><span>The one warning</span></button>
+          <button class="chip" type="button" data-chip="stFold" aria-pressed="false"><span class="n" aria-hidden="true">5</span><span>The fold</span></button>
+          <button class="chip" type="button" data-chip="stFooter" aria-pressed="false"><span class="n" aria-hidden="true">6</span><span>The footer</span></button>
+        </div>
+        <p class="note">Parts 4 and 5 are optional; everything else appears in every substantive reply.</p>
+      </div>
+      <p class="note">Arrow keys move between rows.</p>
+      <div class="card spotcap" aria-live="polite">
+        <div class="big" id="capEmoji" aria-hidden="true"></div>
+        <div>
+          <div class="slotlab" id="capSlot"></div>
+          <p><strong id="capMeaning"></strong></p>
+          <p class="caption" id="capPlace"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="sec-why" aria-labelledby="h-why">
+  <div class="sechead">
+    <h2 id="h-why"><span class="skick">Rationale</span>Why it works</h2>
+    <ul class="lede prose">
+      <li><strong>Fixed anchors.</strong> The same information always lives in the same place: line 1 carries the mood, the progress line carries the count, and the needs-you answer is always the last thing, so the eye learns coordinates instead of re-scanning prose.</li>
+      <li><strong>Reserved semantics.</strong> Each palette glyph has exactly one meaning, so reading a reply becomes recognition rather than comprehension.</li>
+      <li><strong>Traffic-light color.</strong> Green means walk away, amber means attention, red means blocked, judgments your visual system makes preattentively, before conscious reading starts.</li>
+      <li><strong>A closed palette.</strong> One meaning per glyph is what makes it scannable, not rarity. An anchor can appear again further down at exactly the same meaning; what must never happen is a second glyph competing for a meaning that is already taken.</li>
+    </ul>
+  </div>
+</section>
+<section id="sec-rules" aria-labelledby="h-rules">
+  <div class="sechead">
+    <h2 id="h-rules"><span class="skick">The contract</span>The rules</h2>
+    <p class="lede">Fifteen rules in four families, each with a tiny rendered example. Together they are the whole contract; the legend at the top supplies the glyphs. The badge on each card is that rule's number in the contract you install, so it renumbers live as you switch features on and off at the <a href="#sec-install">top of the page</a>.</p>
+  </div>
+
+  <div class="rulegroup">
+    <h3 id="rg-anchors">Anchors</h3>
+    <div class="rulegrid" role="list" aria-labelledby="rg-anchors">
+      <div class="rulecard" role="listitem" data-rule="bottomline">
+        <div class="rhead"><span class="rnum" aria-hidden="true">1</span><h4>Bottom line first</h4></div>
+        <p>Line 1 opens with the anchor cluster, then the outcome or the ask, bold. Context never leads. A strong default rather than a mandatory prefix: ordinary conversation and tier-1 one-liners skip it.</p>
+        <div class="rex"><div class="reply"><p><span class="cl">&#x1F50E; &#x2600;&#xFE0F; &#x1F7E2;</span> <strong>The leak is in the pool: sockets are never returned on timeout.</strong></p><p class="dimtx">Explanation and evidence follow. They never lead.</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="needsyou">
+        <div class="rhead"><span class="rnum" aria-hidden="true">2</span><h4>The footer: four states, always last</h4></div>
+        <p>The final section of a substantive reply, never a buried question, always agreeing with the FORECAST slot. &#x1F64B;, &#x1F51C;, and &#x1F3C1; always close with their footer; only &#x1F7E2; may skip it, and only on a short reply whose body already says what's next, so a missing footer is itself a claim: nothing outstanding, nothing hidden. Needs-you items keep stable IDs, carry how long they have waited, and repeat as an answerable core (the ask, a short stakes summary, the option tokens with consequences) rather than verbatim; genuine depth moves to a linked file, and past roughly three pending items the older ones compress to one-line table rows. Blocking items wait indefinitely: a default is only ever a proposal, never auto-applied.</p>
+        <div class="rex"><div class="reply"><p>&#x1F64B; <strong>Needs you:</strong></p><ol><li><strong>Q1</strong> (waiting 2 replies): rename the flag before release? Blocks the tag. (yes / no / suggest)</li></ol><p class="dimtx">or, when a decision is approaching:</p><p>&#x1F51C; <strong>Nothing needed yet:</strong> the flag-name call arrives when CI goes green.</p><p class="dimtx">or, green light:</p><p>&#x1F7E2; <strong>Next up:</strong> the soak test runs unattended; results follow when it reports.</p><p class="dimtx">or, closed:</p><p>&#x1F3C1; <strong>Done.</strong> &#x1F4A4; <strong>Later, if you want:</strong> a dark-mode pass on the dashboard.</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="counts">
+        <div class="rhead"><span class="rnum" aria-hidden="true">3</span><h4>Counts and progress lists</h4></div>
+        <p>Multi-part work carries counts prefixed with &#x23F3;; arcs of 3 or more steps become a bullet list led by a palette glyph, which gives three states in full-brightness text. A markdown checkbox list is right only where you want items visibly checked off, since it strikes through and dims them. Neither is related to any task-tracking tool the host may provide. Block glyphs cover the jobs a list cannot: a sparkline for a trend, a shade ramp for a proportion.</p>
+        <div class="rex"><div class="reply"><p>&#x23F3; 2 of 4 streams done</p><ul class="tasks"><li><span class="box" aria-hidden="true">&#x2705;</span>schema migrated</li><li><span class="box" aria-hidden="true">&#x2705;</span>index rebuilt</li><li><span class="box" aria-hidden="true">&#x23F3;</span>backfill running</li><li><span class="box" aria-hidden="true">&#x274C;</span>parity check failed</li></ul><p>latency &#x2581;&#x2582;&#x2584;&#x2587;&#x2585;&#x2583;&#x2581; &#x00b7; coverage &#x2593;&#x2593;&#x2593;&#x2591;&#x2591;</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="input">
+        <div class="rhead"><span class="rnum" aria-hidden="true">6</span><h4>Input labels</h4></div>
+        <p>Anything the reader must type or click sits alone in a fenced block with literal inputs labeled; the label line above the block starts with &#x2B07;&#xFE0F;. Shell commands are tagged <code>bash</code>, one command per block, no leading <code>$</code>, no interleaved output, because that is exactly what earns the Run button.</p>
+        <div class="rex"><div class="reply"><p>&#x2B07;&#xFE0F; Run this to restart the service (paste as-is):</p>
+<div class="copywrap"><pre>beaconctl restart --profile default</pre></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rulegroup">
+    <h3 id="rg-structure">Structure</h3>
+    <div class="rulegrid" role="list" aria-labelledby="rg-structure">
+      <div class="rulecard" role="listitem" data-rule="length">
+        <div class="rhead"><span class="rnum" aria-hidden="true">4</span><h4>Length is guidance, not a box</h4></div>
+        <p>Aim short (status updates a few lines, wrap-ups about a screenful), but never drop or over-compress load-bearing information to fit. When detail is reference material rather than decision material, put it in a local file under <code>docs/</code>, self-contained HTML when it wants styling, link the path so one click opens it in a pane, and leave a 2-3 line digest inline. A published artifact leaves the machine, so reach for one only when the reader asks for something shareable.</p>
+        <div class="rex"><div class="reply"><p><strong>Profiler sweep done: the hot path is the locale lookup.</strong></p><p class="dimtx">Full 200-row trace lives in <a href="#sec-rules">reports/sweep.md</a>; the digest above is the decision material.</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="bullet">
+        <div class="rhead"><span class="rnum" aria-hidden="true">5</span><h4>One topic per bullet</h4></div>
+        <p>Bold lead noun, final state not the journey, and reach for bullets by default: two or more parallel things become bullets, never one welded paragraph. Prose is for a single argument that has to flow, and bullets nest one level where a point genuinely carries sub-points, two only when the content is really a tree. IDs never appear bare: a mentioned ID carries a human hook, built into the ID itself or added beside it.</p>
+        <div class="rex"><div class="reply"><ul><li><strong>Cache key</strong> now includes the locale; collisions gone.</li><li><strong>Flush endpoint</strong> added behind the admin scope (<code>T-0142 flush-scope</code>).<ul><li>Old callers keep working; the unscoped route 410s.</li></ul></li></ul></div></div>
+      </div>
+      <div class="rulecard wide" role="listitem" data-rule="markdown">
+        <div class="rhead"><span class="rnum" aria-hidden="true">9</span><h4>Structural markdown</h4></div>
+        <p>Two heading tiers anchor wrap-ups (status updates stay headerless): <code>#</code> is the loud one and <code>##</code> the quiet one, while <code>###</code> is indistinguishable from bold body text. Tables hold enumerable facts with numeric columns right-aligned, and they span the full pane, so two thin columns read as mostly whitespace. One <code>&gt; &#x26A0;&#xFE0F;</code> blockquote holds the load-bearing warning, and quotes nest properly when a quote inside a quote is real; <code>~~strikethrough~~</code> marks superseded content and nests inside bold correctly. A diff fence is for an actual diff, plus the rare readout where a red line must catch the eye; a real changeset belongs in the diff viewer, and a pass/fail checklist is a glyph-led list. Markdown checkbox lists render as real checkboxes rather than literal brackets, and footnotes render properly, the right home for an aside that would otherwise break a sentence. Numbered lists are reserved for true sequences; bullets otherwise. <strong>Link file paths rather than pasting them</strong>: the link hides the URL and one click opens the file, and the path is written as it appears from the working directory, since a <code>~/...</code> or absolute form does not resolve to a clickable target. HTML tags never render, they print literally.</p>
+        <div class="rex"><div class="copywrap"><pre># What changed
+## Parser
+- **Parser core** rewritten; old paths removed, see [grammar.rs:88](src/grammar.rs:88).
+
+- [x] fixtures regenerated
+- [x] old fixtures archived
+
+|gate|result|slowest case|
+|-|-:|-|
+|unit|212 of 212|38 ms, parser_roundtrip|
+
+&gt; &#x26A0;&#xFE0F; Converter not landed; old saves do not round-trip yet.
+
+```diff
+- let tokens = self.buffer.fill().collect();
++ let tokens = self.stream().parse_incremental();
+```</pre></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="fold">
+        <div class="rhead"><span class="rnum" aria-hidden="true">12</span><h4>The fold</h4></div>
+        <p>Past roughly a screenful, one lone <code>---</code> separates must-read (above) from optional reference depth (below). Nothing load-bearing ever sits below the fold, so stopping at the fold is always safe.</p>
+        <div class="rex"><div class="reply"><p><strong>Must-read summary lives here.</strong></p><hr class="fold"><p class="dimtx">Optional depth: internals, log digests, long tables. Skippable by construction.</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="decision">
+        <div class="rhead"><span class="rnum" aria-hidden="true">13</span><h4>Decision tables</h4></div>
+        <p>Each Needs-you item is its own block: the question line first, then its options as a mini table directly beneath, then the next question. Never options before the ask, never two questions sharing one table. The "type" cell is the literal plain-ASCII token to answer with; free-form answers stay welcome.</p>
+        <div class="rex"><div class="reply"><div class="scroll"><table><thead><tr><th>type</th><th>option</th><th>consequence</th></tr></thead><tbody><tr><td><code>1a</code></td><td>migrate now</td><td>one-time bake, then done</td></tr><tr><td><code>1b</code></td><td>defer</td><td>zero work now, debt remains</td></tr></tbody></table></div></div></div>
+      </div>
+
+      <div class="rulecard wide" role="listitem" data-rule="tiers">
+        <div class="rhead"><span class="rnum" aria-hidden="true">15</span><h4>Reply tiers, and judgment above them</h4></div>
+        <p><strong>Tier 1, one-liner:</strong> a direct answer with nothing pending gets the answer alone, no cluster and no footer. <strong>Tier 2, short:</strong> cluster, bold bottom line, bullets when the content is a set, no headers and no fold; the footer follows rule 2, so a short &#x1F7E2; reply whose body already says what's next may end without one. <strong>Tier 3, substantive:</strong> the full skeleton. When the tier is unclear, go up rather than down. Above all of it sits judgment: these are defaults, not a cage, and content is never contorted to fit them.</p>
+        <div class="rex"><div class="reply"><p class="dimtx">Tier 1</p><p>Port 5000.</p><p class="dimtx">Tier 2</p><p><span class="cl">&#x2705; &#x2600;&#xFE0F; &#x1F7E2;</span> <strong>Cache warmed; the 404s are gone.</strong></p><p class="dimtx">Tier 3</p><p>the full skeleton, headers and fold and footer included</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rulegroup">
+    <h3 id="rg-devices">Devices</h3>
+    <div class="rulegrid" role="list" aria-labelledby="rg-devices">
+      <div class="rulecard" role="listitem" data-rule="visual">
+        <div class="rhead"><span class="rnum" aria-hidden="true">10</span><h4>Draw the shape</h4></div>
+        <p>Structures (branching, cycles, state flows, 3+ interacting parts) get drawn instead of prosed: an inline diagram widget or an embedded figure carries the shape, prose carries the verdict, never both in full. Quantitative comparisons get real charts. Linear runs of a few steps stay prose, since a picture that merely decorates is noise, and teaching goes picture-first with a short prose walk.</p>
+        <div class="rex"><div class="reply"><p class="dimtx">(an inline flowchart widget renders here: real boxes and arrows, not ASCII)</p><p><strong>Verdict</strong> stays in prose: the retry loop is the bottleneck.</p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="interactive">
+        <div class="rhead"><span class="rnum" aria-hidden="true">11</span><h4>Interactive widgets and forms</h4></div>
+        <p>Sliders and live controls for teaching and what-if; clickable forms for structured input, whose submit arrives as a normal chat message; widget buttons for decisions rich enough to want icons or subtitles, the plain table when a typed token is quicker. Interaction must earn its place.</p>
+        <div class="rex"><div class="reply"><p class="dimtx">(a form widget renders here; submitting it sends:)</p><p><code>Probe details - Render status: All rendered</code></p></div></div>
+      </div>
+      <div class="rulecard" role="listitem" data-rule="dialog">
+        <div class="rhead"><span class="rnum" aria-hidden="true">14</span><h4>The AskUserQuestion dialog</h4></div>
+        <p>The pop-up question dialog follows the three-way policy picked at install: reserved for genuinely blocking decisions (the default), allowed whenever a small option set fits, or banned outright. The install and update prompts keep the matching settings.json permission in sync with the pick.</p>
+        <div class="rex"><div class="reply"><p class="dimtx">Blockers only: the dialog interrupts once for "which schema do I migrate?", while preference questions wait in the footer.</p></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rulegroup">
+    <h3 id="rg-hygiene">Text hygiene</h3>
+    <div class="rulegrid" role="list" aria-labelledby="rg-hygiene">
+      <div class="rulecard" role="listitem" data-rule="emdash">
+        <div class="rhead"><span class="rnum" aria-hidden="true">7</span><h4>No em-dashes or en-dashes, global scope</h4></div>
+        <p>Neither dash in any generated output: replies, code, comments, docs, commit messages, issue bodies, anything. Use a plain hyphen, a comma, parentheses, a colon, or a new sentence. (Both glyphs are banned from this very page, so the bad examples are spelled out.)</p>
+        <div class="rex"><div class="reply"><p><span class="dimtx">Bad:</span> Fixed the parser (em dash) mostly.</p><p><span class="dimtx">Good:</span> Fixed the parser - mostly.</p><p><span class="dimtx">Bad:</span> pages 4(en dash)7 rebuilt.</p><p><span class="dimtx">Good:</span> pages 4-7 rebuilt.</p></div></div>
+      </div>
+      <div class="rulecard wide" role="listitem" data-rule="time">
+        <div class="rhead"><span class="rnum" aria-hidden="true">8</span><h4>No time estimates</h4></div>
+        <p>No time estimates and no time-of-day remarks; frame on risk and outcome instead.</p>
+        <div class="rex"><div class="reply"><p><span class="dimtx">Bad:</span> Should take about two hours this afternoon.</p><p><span class="dimtx">Good:</span> Low risk: the converter is covered by fixtures, so a bad landing is caught before release.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="sec-extras" aria-labelledby="h-extras">
+  <div class="sechead">
+    <h2 id="h-extras"><span class="skick">Reference</span>Extras</h2>
+  </div>
+
+  <h3>Tweaking FAQ</h3>
+  <details>
+    <summary>How do I change an emoji safely?</summary>
+    <p>Keep one meaning per glyph. Pick a replacement that appears nowhere else in the palette, then update both the rule text and the palette list in the same edit, so the glyph never carries two meanings and no meaning has two glyphs. Prefer single-codepoint emoji (at most a presentation selector): tone-modified or ZWJ-joined emoji can split into two half glyphs on surfaces that measure codepoints instead of grapheme clusters.</p>
+  </details>
+  <details>
+    <summary>Can I add more emoji to the palette?</summary>
+    <p>Resist it. The palette works because it is closed: every meaning has exactly one glyph, and every glyph exactly one meaning. If a new anchor is genuinely needed, give it exactly one meaning no other glyph carries, and keep decorative emoji out of the anchor slots entirely.</p>
+  </details>
+  <details>
+    <summary>Can I trial-run it in one project first?</summary>
+    <p>Yes. Copy the Preview contract output into that project's own <code>CLAUDE.md</code> (in the repo root) instead of <code>~/.claude/CLAUDE.md</code>. It then applies only to sessions in that project. When you like it, move the section to the user-scope file and delete the project copy.</p>
+  </details>
+  <details id="x-chat">
+    <summary>Why is the Claude chat version different?</summary>
+    <p>The contract governs <strong>Claude Code</strong>, wherever it runs: the desktop app's Code tab, the terminal CLI, the editor extension, cloud sessions. Claude <em>chat</em> (the Chat tab, the web app, mobile) reads nothing from disk, so it needs its own copy pasted into your account settings.</p>
+    <p>It is deliberately not the same document. Chat is a different medium, with no repository to link into and no panes to open, and a different context: mostly conversation rather than work sessions. In a work session the likely failure is under-formatting, a wall of text with the answer buried, which rules fix. In chat the likely failure is over-formatting, ceremony on a two-line answer, which rules cause and judgment prevents. So that version is an ethos, and it ends by saying most messages need none of it.</p>
+  </details>
+
+  <h3>Undo, in plain words</h3>
+  <p>Run <code>claude plugin uninstall talking-to-dave</code>: hooks and skills go with it, and because the dialog policy is enforced by a hook rather than a settings edit, a banned AskUserQuestion dialog comes back on its own. Then open <code>~/.claude/CLAUDE.md</code> and delete the section between the two presentation-contract marker comments; the plugin never deletes your file content for you. Saved choices sit in the plugin data directory under <code>~/.claude/plugins/data/</code>, safe to delete. If you also pasted the chat ethos, clear that box in your claude.ai account settings.</p>
+
+</section>
+
+</main>
+<button id="toTop" type="button" hidden aria-label="Back to top of page">Top</button>
+<script>
+(function(){
+  "use strict";
+  /*INLINE:BUILDER*/
+
+  /* ---------- theme toggle ---------- */
+  var tbtn=document.getElementById("themeToggle");
+  function themeLabel(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    tbtn.textContent=(cur==="dark"?EM.sun:EM.moon)+" Theme";
+    tbtn.setAttribute("aria-label",cur==="dark"?"Switch to light theme":"Switch to dark theme");
+  }
+  tbtn.addEventListener("click",function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    var next=cur==="dark"?"light":"dark";
+    document.documentElement.setAttribute("data-theme",next);
+    try{localStorage.setItem("ttd-theme",next);}catch(e){}
+    themeLabel();
+  });
+  themeLabel();
+
+  /* ---------- copy buttons ---------- */
+  function fallbackCopy(txt,done){
+    var ta=document.createElement("textarea");
+    ta.value=txt; ta.setAttribute("readonly","");
+    ta.style.position="fixed"; ta.style.top="0"; ta.style.left="0"; ta.style.opacity="0";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0,txt.length);
+    var ok=false;
+    try{ok=document.execCommand("copy");}catch(e){}
+    document.body.removeChild(ta);
+    if(ok)done();
+  }
+  function doCopy(txt,btn){
+    var old=btn.textContent;
+    var done=function(){
+      btn.textContent="Copied!"; btn.classList.add("ok");
+      setTimeout(function(){btn.textContent=old; btn.classList.remove("ok");},1400);
+    };
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(txt).then(done,function(){fallbackCopy(txt,done);});
+    }else{
+      fallbackCopy(txt,done);
+    }
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".copywrap"),function(w){
+    var pre=w.querySelector("pre");
+    if(!pre)return;
+    var b=document.createElement("button");
+    b.type="button"; b.className="copybtn"; b.textContent="Copy";
+    b.setAttribute("aria-label","Copy this block to the clipboard");
+    b.addEventListener("click",function(){doCopy(pre.textContent,b);});
+    w.appendChild(b);
+  });
+
+  /* ---------- anatomy: specimen, anchor rail, structure rail ---------- */
+  var CHIP={
+    ok:      {grp:"s1", e:EM.ok,      slot:"STATUS (slot 1)",   mean:"done / success",                       place:"Slot 1 of the line-1 cluster, right before the bold bottom line."},
+    rocket:  {grp:"s1", e:EM.rocket,  slot:"STATUS (slot 1)",   mean:"launched / running in background",     place:"Slot 1 of the line-1 cluster, right before the bold bottom line."},
+    find:    {grp:"s1", e:EM.find,    slot:"STATUS (slot 1)",   mean:"findings / answer / recommendation",   place:"Slot 1 of the line-1 cluster, right before the bold bottom line."},
+    warn:    {grp:"s1", e:EM.warn,    slot:"STATUS (slot 1)",   mean:"partial, degraded, needs attention",   place:"Slot 1 of the cluster; also the only glyph that opens the single warning blockquote.", extra:"skWarn"},
+    fail:    {grp:"s1", e:EM.fail,    slot:"STATUS (slot 1)",   mean:"failed / blocked",                     place:"Slot 1 of the line-1 cluster, right before the bold bottom line."},
+    sun:     {grp:"s2", e:EM.sun,     slot:"WEATHER (slot 2)",  mean:"on plan, going well",                  place:"Slot 2 of the line-1 cluster: how the overall effort is going."},
+    suncloud:{grp:"s2", e:EM.suncloud,slot:"WEATHER (slot 2)",  mean:"minor bumps, handled without you",     place:"Slot 2 of the line-1 cluster: how the overall effort is going."},
+    storm:   {grp:"s2", e:EM.storm,   slot:"WEATHER (slot 2)",  mean:"going wrong or off plan: worth skimming to steer", place:"Slot 2 of the line-1 cluster: how the overall effort is going."},
+    green:   {grp:"s3", e:EM.green,   slot:"FORECAST (slot 3)", mean:"no input needed, safe to walk away",   place:"Slot 3 of the line-1 cluster; the footer, when present, agrees and carries what's next; a short reply may skip it."},
+    soon:    {grp:"s3", e:EM.soon,    slot:"FORECAST (slot 3)", mean:"input needed soon (a gate or decision is approaching)", place:"Slot 3 of the line-1 cluster; the footer reads "+EM.soon+" too, naming what is coming and what triggers it."},
+    hand:    {grp:"s3", e:EM.hand,    slot:"FORECAST (slot 3)", mean:"input needed in THIS reply",           place:"Slot 3 of the line-1 cluster; the Needs-you footer always agrees with it."},
+    flag:    {grp:"s3", e:EM.flag,    slot:"FORECAST (slot 3)", mean:"finished: arc closed, nothing next, nothing pending", place:"Slot 3 of the line-1 cluster; the footer closes with the flag line."},
+    hour:    {grp:"count", e:EM.hour, slot:"COUNTS",            mean:"progress counter on multi-part work",  place:"Prefix of the progress line, directly under line 1."},
+    down:    {grp:"input", e:EM.down, slot:"INPUT LABEL",       mean:"marks a block you must type or click", place:"Starts the label line directly above the fenced block; the block holds exactly what you paste."},
+    warnq:   {grp:"warnblk", e:EM.warn, slot:"WARNING",         mean:"the one load-bearing warning",         place:"At most one blockquote per reply, always above the fold, always opened by the attention glyph."},
+    needH:   {grp:"needs", e:EM.hand, slot:"FOOTER",            mean:"items are waiting on you",             place:"First glyph of the final section; always agrees with the forecast slot."},
+    needS:   {grp:"needs", e:EM.soon, slot:"FOOTER",            mean:"a decision is approaching",            place:'First glyph of "Nothing needed yet:", which names what is coming and its trigger; always agrees with the forecast slot.'},
+    needG:   {grp:"needs", e:EM.green,slot:"FOOTER",            mean:"nothing is needed; here is what's next", place:'First glyph of "Next up:", the forward look when nothing is needed; always agrees with the forecast slot.'},
+    needF:   {grp:"needs", e:EM.flag, slot:"FOOTER",            mean:"done: the arc is closed",              place:'First glyph of "Done.", the terminal close; always agrees with the forecast slot.'},
+    zzz:     {grp:"needs", e:EM.zzz,  slot:"PARKED IDEAS",      mean:"zero-obligation parked idea",          place:'Leads the optional "Later, if you want:" line after the flag; never used for work worth recommending.'},
+    /* structure lens: the same specimen named region by region. These carry a
+       number instead of a glyph, and none of them touches the composed state,
+       so switching rails never disturbs the reply you built with the anchors. */
+    stCluster: {grp:"line1",  n:"1", slot:"STRUCTURE", mean:"Mood cluster and bottom line", place:"Three slots in fixed order open line 1, STATUS then WEATHER then FORECAST, followed straight away by the bold outcome. Context never leads."},
+    stProgress:{grp:"prog",   n:"2", slot:"STRUCTURE", mean:"Progress line",                place:"The count on multi-part work, directly under line 1. Arcs of three or more steps become a bullet list led by the done, running and failed anchors."},
+    stBody:    {grp:"body",   n:"3", slot:"STRUCTURE", mean:"Section headers and bullets",  place:"Headers anchor wrap-ups and multi-topic replies; each bullet carries one topic behind a bold lead noun, describing final state rather than the journey."},
+    stWarn:    {grp:"warnblk",n:"4", slot:"STRUCTURE", mean:"The one warning",              place:"At most one load-bearing warning per reply, always opened by the attention glyph, always above the fold."},
+    stFold:    {grp:"fold",   n:"5", slot:"STRUCTURE", mean:"The fold",                     place:"One lone rule past roughly a screenful. Everything above it is must-read and everything below is optional reference depth, so stopping at the fold is always safe."},
+    stFooter:  {grp:"foot",   n:"6", slot:"STRUCTURE", mean:"The footer",                   place:"Always the last section when present, its anchor agreeing with the line-1 forecast slot. Only the walk-away anchor may skip it, on a short reply whose body already says what is next."}
+  };
+  var TGT={
+    s1:["skS1"], s2:["skS2"], s3:["skS3"], count:["skCountA","skTasks"],
+    input:["skInput"], warnblk:["skWarn"], needs:["skNeeds"],
+    line1:["skS1","skS2","skS3","skLine1"], prog:["skCountA","skTasks"],
+    body:["skHead","skBullets"], fold:["skFold"], foot:["skNeeds"]
+  };
+  var chips=Array.prototype.slice.call(document.querySelectorAll(".chip"));
+  var skS1=document.getElementById("skS1");
+  var skS2=document.getElementById("skS2");
+  var skS3=document.getElementById("skS3");
+  /* spotlight content engine: one fake task (an importer revamp) composed from
+     the remembered state triple. Line 1 = STATUS base + FORECAST clause;
+     bullets = base progress note + WEATHER clause; storm raises the warning
+     blockquote with a skim-and-steer line; FORECAST also drives the footer. */
+  var spot={s:"ok", w:"suncloud", f:"hand"};
+  var SK_L1={
+    ok:"Importer revamp: parser stream done, fixtures green",
+    rocket:"Importer revamp: fixture re-bake launched in the background",
+    find:"Importer revamp: the fixture drift traces to stale v2 grammar tables",
+    warn:"Importer revamp: parser landed, but two legacy fixtures still fail",
+    fail:"Importer revamp: fixture re-bake blocked on the missing v2 grammar tables"
+  };
+  var SK_CLAUSE={
+    green:"; converter up next, nothing needed.",
+    soon:"; a decision is coming shortly.",
+    hand:"; one answer needed below.",
+    flag:"; that closes out the revamp."
+  };
+  var SK_BULLET="<li><strong>Parser core</strong> rewritten against the v2 grammar; old paths removed.</li>";
+  var SK_WX={
+    sun:"",
+    suncloud:"<li><strong>Stale grammar cache</strong> hit mid-run; cleared and re-baked, handled without you.</li>",
+    storm:"<li><strong>Legacy round-trip</strong> broke when the v2 tables landed; recovery detail sits below the fold.</li>"
+  };
+  function renderNeeds(f){
+    var el=document.getElementById("skNeeds");
+    if(f==="hand"){
+      el.innerHTML="<p>"+EM.hand+" <strong>Needs you:</strong></p><ol><li>Keep pre-v1.3 import support in the new parser? (keep / drop)</li></ol>";
+    }else if(f==="soon"){
+      el.innerHTML="<p>"+EM.soon+" <strong>Nothing needed yet:</strong> the grammar-table choice arrives when the re-bake reports, with measured numbers attached.</p>";
+    }else if(f==="flag"){
+      el.innerHTML="<p>"+EM.flag+" <strong>Done.</strong></p><p>"+EM.zzz+" <strong>Later, if you want:</strong> a v1 grammar shim could revive the two retired legacy fixtures.</p>";
+    }else{
+      el.innerHTML="<p>"+EM.green+" <strong>Next up:</strong> the legacy converter lands next; fixtures re-run right after.</p>";
+    }
+  }
+  /* the same composed triple, read back in plain English. One state object
+     drives both the sample and this gloss, so they can never disagree. */
+  var ST={ok:"the work is done", rocket:"work launched and running in the background",
+          find:"here is what I found", warn:"the result is partial and needs attention",
+          fail:"the work failed or is blocked"};
+  var WT={sun:"everything on plan", suncloud:"minor bumps, handled without you",
+          storm:"the effort is going wrong, worth skimming to steer"};
+  var FT={green:"no input is needed: safe to walk away", soon:"input will be needed soon",
+          hand:"I need your input in this reply", flag:"the work is finished: nothing more is coming"};
+  function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+  function renderCluster(){
+    document.getElementById("clusterOut").textContent=EM[spot.s]+" "+EM[spot.w]+" "+EM[spot.f];
+    var conn=(spot.f==="green"||spot.f==="flag")?"and":"but";
+    document.getElementById("clusterText").textContent=
+      cap(ST[spot.s])+", "+WT[spot.w]+", "+conn+" "+FT[spot.f]+".";
+  }
+  function composeSkeleton(selKey){
+    renderCluster();
+    skS1.textContent=EM[spot.s];
+    skS2.textContent=EM[spot.w];
+    skS3.textContent=EM[spot.f];
+    document.getElementById("skLine1").innerHTML="<strong>"+SK_L1[spot.s]+SK_CLAUSE[spot.f]+"</strong>";
+    document.getElementById("skBullets").innerHTML=SK_BULLET+SK_WX[spot.w];
+    var wq=document.getElementById("skWarn");
+    wq.hidden=!(spot.w==="storm"||selKey==="warn"||selKey==="warnq"||selKey==="stWarn");
+    wq.innerHTML=(spot.w==="storm")
+      ? EM.warn+" Off plan: legacy saves older than v1.3 no longer round-trip. Skim the bullets above and steer if the recovery plan reads wrong."
+      : EM.warn+" Legacy saves older than v1.3 do not round-trip yet.";
+    document.getElementById("skSoon").hidden=(spot.f!=="soon");
+    renderNeeds(spot.f);
+  }
+  function selectChip(key){
+    var d=CHIP[key];
+    if(d.grp==="s1")spot.s=key;
+    if(d.grp==="s2")spot.w=key;
+    if(d.grp==="s3")spot.f=key;
+    if(d.grp==="needs")spot.f=(key==="needH")?"hand":(key==="needS")?"soon":(key==="needG")?"green":"flag";
+    composeSkeleton(key);
+    var targets=TGT[d.grp].slice();
+    if(d.extra)targets.push(d.extra);
+    Array.prototype.forEach.call(document.querySelectorAll("#spotSkel .skhit"),function(el){el.classList.remove("skhit");});
+    targets.forEach(function(id){document.getElementById(id).classList.add("skhit");});
+    /* pressed = what you just picked; live = the three anchors currently
+       composing the sample's cluster, which is what the slot columns used to
+       show side by side */
+    var live={}; live[spot.s]=1; live[spot.w]=1; live[spot.f]=1;
+    chips.forEach(function(c){
+      var k=c.getAttribute("data-chip");
+      var on=k===key;
+      c.setAttribute("aria-pressed",on?"true":"false");
+      c.tabIndex=on?0:-1;
+      c.classList.toggle("live",!!live[k]&&/^s[123]$/.test(CHIP[k].grp));
+    });
+    document.getElementById("capEmoji").textContent=d.e||d.n;
+    document.getElementById("capSlot").textContent=d.slot;
+    document.getElementById("capMeaning").textContent=d.mean;
+    document.getElementById("capPlace").textContent=d.place;
+  }
+  chips.forEach(function(c){
+    c.addEventListener("click",function(){selectChip(c.getAttribute("data-chip"));});
+  });
+  /* roving focus stays inside the rail on show, so the hidden rail's rows are
+     never tabbed into */
+  document.getElementById("chipRail").addEventListener("keydown",function(ev){
+    var k=ev.key;
+    if(k!=="ArrowRight"&&k!=="ArrowLeft"&&k!=="ArrowDown"&&k!=="ArrowUp"&&k!=="Home"&&k!=="End")return;
+    var vis=chips.filter(function(c){return c.offsetParent!==null;});
+    var cur=vis.indexOf(document.activeElement);
+    if(cur<0)return;
+    ev.preventDefault();
+    var next=cur;
+    if(k==="ArrowRight"||k==="ArrowDown")next=(cur+1)%vis.length;
+    if(k==="ArrowLeft"||k==="ArrowUp")next=(cur-1+vis.length)%vis.length;
+    if(k==="Home")next=0;
+    if(k==="End")next=vis.length-1;
+    selectChip(vis[next].getAttribute("data-chip"));
+    vis[next].focus();
+  });
+
+  /* ---------- rail lens: anchors or structure ----------
+     both lenses drive the same specimen through selectChip, so there is one
+     spotlight mechanism and one caption box, asked two different questions. */
+  var railStrip=document.querySelector(".railtabs");
+  function showRail(which){
+    Array.prototype.forEach.call(railStrip.querySelectorAll(".tab"),function(t){
+      t.setAttribute("aria-selected",t.getAttribute("data-rail")===which?"true":"false");
+    });
+    document.getElementById("railAnchors").hidden=(which!=="anchors");
+    document.getElementById("railStructure").hidden=(which!=="structure");
+    selectChip(which==="anchors"?"ok":"stCluster");
+  }
+  if(railStrip){
+    railStrip.addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest(".tab"):null;
+      if(b)showRail(b.getAttribute("data-rail"));
+    });
+    railStrip.addEventListener("keydown",function(ev){
+      if(ev.key!=="ArrowRight"&&ev.key!=="ArrowLeft")return;
+      var list=Array.prototype.slice.call(railStrip.querySelectorAll(".tab"));
+      var i=list.indexOf(document.activeElement);
+      if(i<0)return;
+      ev.preventDefault();
+      var n=(ev.key==="ArrowRight"?i+1:i-1+list.length)%list.length;
+      list[n].focus();
+      showRail(list[n].getAttribute("data-rail"));
+    });
+  }
+  selectChip("ok");
+
+  /* ---------- sticky section nav ----------
+     cloned from the hero table of contents so section names have one source of
+     truth; it reveals once the hero leaves the viewport and marks the section
+     currently under the top of the screen. */
+  var navBar=document.getElementById("stickyNav");
+  var srcToc=document.querySelector(".hero .toc");
+  var heroEl=document.getElementById("top");
+  if(navBar&&srcToc&&heroEl&&"IntersectionObserver" in window){
+    var clone=srcToc.cloneNode(true);
+    clone.setAttribute("aria-label","Sections");
+    navBar.appendChild(clone);
+    navBar.hidden=false;
+    var navLinks=Array.prototype.slice.call(navBar.querySelectorAll("a"));
+    new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if(e.target===heroEl)navBar.classList.toggle("on",!e.isIntersecting);
+      });
+    },{rootMargin:"-48px 0px 0px 0px"}).observe(heroEl);
+    var secs=Array.prototype.slice.call(document.querySelectorAll("main > section[id]"));
+    var visible={};
+    var secObs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){visible[e.target.id]=e.isIntersecting;});
+      var cur=null;
+      secs.forEach(function(s){if(!cur&&visible[s.id])cur=s.id;});
+      navLinks.forEach(function(a){
+        a.setAttribute("aria-current",a.getAttribute("href")==="#"+cur?"true":"false");
+      });
+    },{rootMargin:"-12% 0px -72% 0px"});
+    secs.forEach(function(s){secObs.observe(s);});
+  }
+
+  /* ---------- scenario tabs ---------- */
+  // Scoped to the gallery section on purpose: the configurator output strip and
+  // the anatomy rail are tablists too, and a global [role="tab"] query pulled
+  // their buttons in, so clicking one hid every gallery panel and threw on a
+  // null panel. Scoping by section cannot rot when another strip is added.
+  var tabs=Array.prototype.slice.call(
+    document.querySelectorAll('#sec-gallery [role="tab"]'));
+  var panels=tabs.map(function(t){return document.getElementById(t.getAttribute("aria-controls"));});
+  function selectTab(i,focus){
+    tabs.forEach(function(t,j){
+      var on=j===i;
+      t.setAttribute("aria-selected",on?"true":"false");
+      t.tabIndex=on?0:-1;
+      panels[j].hidden=!on;
+    });
+    if(focus)tabs[i].focus();
+  }
+  tabs.forEach(function(t,i){
+    t.addEventListener("click",function(){selectTab(i,false);});
+    t.addEventListener("keydown",function(ev){
+      var k=ev.key, next=i;
+      if(k==="ArrowRight")next=(i+1)%tabs.length;
+      else if(k==="ArrowLeft")next=(i-1+tabs.length)%tabs.length;
+      else if(k==="Home")next=0;
+      else if(k==="End")next=tabs.length-1;
+      else return;
+      ev.preventDefault();
+      selectTab(next,true);
+    });
+  });
+
+  /* ---------- contract generator + install paths ---------- */
+  var nameEl=document.getElementById("cfgName");
+  function readCfg(){
+    var g=function(id){return document.getElementById(id).checked;};
+    return {
+      name:sanitizeName(nameEl.value),
+      weather:g("optWeather"), forecast:g("optForecast"), tasks:g("optTasks"), docs:g("optDocs"),
+      fold:g("optFold"), decision:g("optDecision"), diff:g("optDiff"),
+      emdash:g("optEmdash"),
+      visual:g("optVisual"), interactive:g("optInteractive"),
+      dlg:document.getElementById("selDialog").value
+    };
+  }
+  /* the rule cards mirror the generated contract: same order, same conditions,
+     so a card's badge is always the rule number the reader would install. */
+  var RULE_ORDER=[
+    {key:"bottomline"},{key:"needsyou"},{key:"counts"},{key:"length"},
+    {key:"bullet"},{key:"input"},{key:"emdash",opt:"emdash"},
+    {key:"time"},{key:"markdown"},{key:"visual",opt:"visual"},{key:"interactive",opt:"interactive"},
+    {key:"fold",opt:"fold"},{key:"decision",opt:"decision"},{key:"dialog"},
+    {key:"tiers"}
+  ];
+  function renumberRules(o){
+    var n=0;
+    RULE_ORDER.forEach(function(r){
+      var card=document.querySelector('.rulecard[data-rule="'+r.key+'"]');
+      if(!card)return;
+      var badge=card.querySelector(".rnum");
+      var head=card.querySelector(".rhead");
+      var tag=head.querySelector(".rtag");
+      var on=!r.opt||o[r.opt];
+      if(on){
+        n+=1;
+        badge.textContent=String(n);
+        badge.title="Rule "+n+" of the contract you install";
+        card.setAttribute("data-off","false");
+        if(tag)head.removeChild(tag);
+      }else{
+        badge.textContent="-";
+        badge.title="Switched off, so it is not in your contract";
+        card.setAttribute("data-off","true");
+        if(!tag){
+          tag=document.createElement("span");
+          tag.className="rtag";
+          tag.textContent="not in your contract";
+          head.appendChild(tag);
+        }
+      }
+    });
+  }
+  /* ---------- saved settings ----------
+     One key holds the name and the ticks, so handing someone a newer copy of
+     this file opens it with their last choices already set: Chrome and Edge
+     treat every file:// document as the same origin, so the store survives the
+     swap. Safari refuses storage on file:// entirely and older browsers can be
+     out of quota, which is what the try/catch absorbs; the page then simply
+     starts from its defaults. */
+  var CFG_KEY="ttd-config";
+  var OPT_IDS=["optWeather","optForecast","optTasks","optDocs","optFold","optDecision","optDiff","optEmdash","optVisual","optInteractive"];
+  function eachOpt(fn){OPT_IDS.forEach(function(id){fn(document.getElementById(id),id);});}
+  function saveCfg(){
+    try{
+      var opts={};
+      eachOpt(function(el,id){opts[id]=el.checked;});
+      localStorage.setItem(CFG_KEY,JSON.stringify({name:nameEl.value,opts:opts,dlg:document.getElementById("selDialog").value}));
+    }catch(e){}
+  }
+  /* every field is type-checked before it is applied: the store is editable by
+     hand and a stale copy may predate an option that exists now */
+  function restoreCfg(){
+    var raw=null, saved=null;
+    try{raw=localStorage.getItem(CFG_KEY);}catch(e){}
+    if(!raw)return;
+    try{saved=JSON.parse(raw);}catch(e){return;}
+    if(!saved||typeof saved!=="object")return;
+    if(typeof saved.name==="string")nameEl.value=saved.name.slice(0,40);
+    var opts=(saved.opts&&typeof saved.opts==="object")?saved.opts:{};
+    eachOpt(function(el,id){if(typeof opts[id]==="boolean")el.checked=opts[id];});
+    if(saved.dlg==="free"||saved.dlg==="blockers"||saved.dlg==="ban")document.getElementById("selDialog").value=saved.dlg;
+  }
+  function resetCfg(){
+    try{localStorage.removeItem(CFG_KEY);}catch(e){}
+    nameEl.value="Dave";
+    eachOpt(function(el){el.checked=true;});
+    document.getElementById("selDialog").value="blockers";
+    regen();
+    nameEl.focus();
+  }
+
+  var genOut=document.getElementById("genOut");
+  var outNotes=Array.prototype.slice.call(document.querySelectorAll(".outnote"));
+  var outMode="contract";
+  var outStrip=document.querySelector(".outtabs");
+  if(outStrip){
+    outStrip.addEventListener("click",function(e){
+      var b=e.target.closest?e.target.closest(".tab"):null;
+      if(!b)return;
+      outMode=b.getAttribute("data-out");
+      var tabs=outStrip.querySelectorAll(".tab");
+      for(var i=0;i<tabs.length;i++){tabs[i].setAttribute("aria-selected",tabs[i]===b?"true":"false");}
+      regen();
+    });
+    outStrip.addEventListener("keydown",function(ev){
+      var k=ev.key;
+      if(k!=="ArrowRight"&&k!=="ArrowLeft")return;
+      var list=Array.prototype.slice.call(outStrip.querySelectorAll(".tab"));
+      var i=list.indexOf(document.activeElement);
+      if(i<0)return;
+      ev.preventDefault();
+      var n=(k==="ArrowRight"?i+1:i-1+list.length)%list.length;
+      list[n].focus();
+      list[n].click();
+    });
+  }
+
+  function regen(){
+    var o=readCfg();
+    genOut.textContent = outMode==="ethos" ? buildChatPreferences(o) : buildContract(o);
+    outNotes.forEach(function(n){n.hidden=n.getAttribute("data-note")!==outMode;});
+    renumberRules(o);
+    saveCfg();
+  }
+  document.getElementById("cfgForm").addEventListener("input",regen);
+  document.getElementById("cfgReset").addEventListener("click",resetCfg);
+  restoreCfg();
+  regen();
+
+  /* ---------- copy palette as markdown ---------- */
+  var pbtn=document.getElementById("copyPalette");
+  pbtn.addEventListener("click",function(){
+    doCopy(buildPaletteMarkdown("you"),pbtn);
+  });
+
+  /* ---------- tooltips (configurator help) ---------- */
+  var tipOpen=null, tipWasOpen=false;
+  var tips=Array.prototype.slice.call(document.querySelectorAll(".tip"));
+  /* keep every bubble inside the viewport, open or not, so none can be clipped
+     offscreen and none widens the page */
+  function clampTip(tip){
+    tip.style.marginLeft="";
+    var r=tip.getBoundingClientRect(), pad=8, shift=0;
+    if(r.left<pad)shift=pad-r.left;
+    else if(r.right>window.innerWidth-pad)shift=(window.innerWidth-pad)-r.right;
+    if(shift)tip.style.marginLeft=Math.round(shift)+"px";
+  }
+  function clampAll(){tips.forEach(clampTip);}
+  function hideTip(){
+    if(!tipOpen)return;
+    tipOpen.tip.classList.remove("on","below");
+    tipOpen.btn.setAttribute("aria-expanded","false");
+    tipOpen=null;
+  }
+  function showTip(btn){
+    if(tipOpen&&tipOpen.btn===btn)return;
+    var tip=document.getElementById(btn.getAttribute("aria-describedby"));
+    if(!tip)return;
+    hideTip();
+    tip.classList.remove("below");
+    tip.classList.add("on");
+    btn.setAttribute("aria-expanded","true");
+    tipOpen={btn:btn,tip:tip};
+    /* flip above or below on vertical room, then nudge in from either viewport edge */
+    var br=btn.getBoundingClientRect();
+    if(br.top<tip.getBoundingClientRect().height+16&&(window.innerHeight-br.bottom)>br.top){
+      tip.classList.add("below");
+    }
+    clampTip(tip);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".qmark"),function(btn){
+    btn.addEventListener("mouseenter",function(){showTip(btn);});
+    btn.addEventListener("mouseleave",function(){
+      if(tipOpen&&tipOpen.btn===btn&&document.activeElement!==btn)hideTip();
+    });
+    btn.addEventListener("focus",function(){showTip(btn);});
+    btn.addEventListener("blur",function(){if(tipOpen&&tipOpen.btn===btn)hideTip();});
+    /* pointerdown records the pre-click state so a tap toggles instead of double-firing */
+    btn.addEventListener("pointerdown",function(){tipWasOpen=!!(tipOpen&&tipOpen.btn===btn);});
+    btn.addEventListener("click",function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      if(tipWasOpen)hideTip(); else showTip(btn);
+      tipWasOpen=false;
+    });
+  });
+  document.addEventListener("keydown",function(ev){
+    if(ev.key==="Escape"&&tipOpen)hideTip();
+  });
+  document.addEventListener("click",function(){hideTip();});
+  window.addEventListener("resize",function(){hideTip();clampAll();});
+  clampAll();
+
+  /* ---------- back to top ---------- */
+  var topBtn=document.getElementById("toTop");
+  function syncTopBtn(){
+    topBtn.hidden=(window.pageYOffset||document.documentElement.scrollTop||0)<700;
+  }
+  topBtn.addEventListener("click",function(){
+    var reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({top:0,behavior:reduce?"auto":"smooth"});
+    var hdr=document.getElementById("top");
+    try{hdr.focus({preventScroll:true});}catch(e){hdr.focus();}
+  });
+  window.addEventListener("scroll",syncTopBtn,{passive:true});
+  syncTopBtn();
+
+  /* ---------- linked details ----------
+     a link into a collapsed <details> should open it, not just scroll to it */
+  function openHashTarget(){
+    var el=location.hash?document.getElementById(location.hash.slice(1)):null;
+    if(el&&el.tagName==="DETAILS")el.open=true;
+  }
+  window.addEventListener("hashchange",openHashTarget);
+  openHashTarget();
+})();
+</script>
+</body>
+</html>
