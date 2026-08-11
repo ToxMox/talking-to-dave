@@ -19,7 +19,9 @@ Then, in any Claude Code session:
 /talking-to-dave:configure
 ```
 
-**Contents**: [The problem](#the-problem) · [What a reply looks like](#what-a-reply-looks-like) · [The anchor palette](#the-anchor-palette) · [Who it is for](#who-it-is-for) · [How it works](#how-it-works) · [The four skills](#the-four-skills) · [What it writes, and where](#what-it-writes-and-where) · [claude.ai chat preferences](#claudeai-chat-preferences) · [Requirements](#requirements) · [Uninstall](#uninstall) · [Development](#development)
+Requires Node.js on PATH: the hooks, skills, and generator all run with `node`. Any recent LTS works; CI runs on 22.
+
+**Contents**: [The problem](#the-problem) · [What a reply looks like](#what-a-reply-looks-like) · [The anchor palette](#the-anchor-palette) · [Who it is for](#who-it-is-for) · [How it works](#how-it-works) · [The four skills](#the-four-skills) · [What it writes, and where](#what-it-writes-and-where) · [claude.ai chat preferences](#claudeai-chat-preferences) · [Uninstall](#uninstall) · [Development](#development)
 
 ## The problem
 
@@ -125,10 +127,6 @@ Anyone who scans replies instead of reading them top to bottom: ADHD readers fir
 ## claude.ai chat preferences
 
 The chat apps read nothing from disk, so the plugin also generates a companion text for claude.ai Settings, personal preferences. It is deliberately an ethos rather than a rulebook, because in chat the likely failure is over-formatting. `/talking-to-dave:chat-preferences` prints it ready to paste, and the session-start sync nudges you when your saved config has drifted from what was last pasted.
-
-## Requirements
-
-Node.js on PATH: the hooks, skills, and generator all run with `node`. Any recent LTS works; CI runs on 22.
 
 ## Uninstall
 
