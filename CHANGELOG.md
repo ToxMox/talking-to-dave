@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1 (2026-08-11)
+
+- Fix: `CLAUDE_PLUGIN_DATA` is honored only when its final path segment starts with `talking-to-dave`. The variable can leak from other plugins' contexts into the session shell (observed live), which previously misrouted config reads and log writes; the configure and sync skills resolve the data directory with the same rule.
+
 ## 0.2.0 (2026-08-11)
 
 - Session-start nudge: with no saved config the hook offers `/talking-to-dave:configure` via context, distinguishing a fresh install from a pre-plugin marker block awaiting migration.
