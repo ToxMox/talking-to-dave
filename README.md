@@ -33,26 +33,43 @@ You answer `1a` (or in your own words) and move on. No rereading, no buried ques
 
 ## The anchor palette
 
-Line 1 carries three slots in fixed order: STATUS (what happened), WEATHER (how the overall effort is going), FORECAST (whether you will be needed). The footer anchor always matches the FORECAST slot.
+Line 1 carries three slots in fixed order, and the sample above opens with them: ✅ 🌤️ 🙋 reads left to right as "the work is done, there were minor bumps I handled myself, and this reply needs your input."
 
-|Slot|Emoji|Meaning|
+**Slot 1, STATUS: what happened.**
+
+|emoji|meaning|
+|-|-|
+|✅|done / success|
+|🚀|launched / running in background|
+|🔎|findings / answer / recommendation|
+|⚠️|partial, degraded, needs attention|
+|❌|failed / blocked|
+
+**Slot 2, WEATHER: how the overall effort is going.**
+
+|emoji|meaning|
+|-|-|
+|☀️|on plan, going well|
+|🌤️|minor bumps, handled without you|
+|⛈️|going wrong or off plan: worth skimming to steer|
+
+**Slot 3, FORECAST: whether you will be needed.** The footer anchor always repeats this slot, so line 1 and the closing section can never disagree.
+
+|emoji|meaning|
+|-|-|
+|🟢|no input needed, safe to walk away|
+|🔜|input will be needed soon (a gate or decision is approaching)|
+|🙋|input needed in THIS reply|
+|🏁|finished: the arc is closed, nothing next, nothing pending|
+
+**Utility glyphs** carry the rest of the scanning load outside the cluster.
+
+|emoji|where|meaning|
 |-|-|-|
-|1 STATUS|✅|done / success|
-|1 STATUS|🚀|launched / running in background|
-|1 STATUS|🔎|findings / answer / recommendation|
-|1 STATUS|⚠️|partial, degraded, needs attention|
-|1 STATUS|❌|failed / blocked|
-|2 WEATHER|☀️|on plan, going well|
-|2 WEATHER|🌤️|minor bumps, handled without you|
-|2 WEATHER|⛈️|going wrong or off plan: worth skimming to steer|
-|3 FORECAST|🟢|no input needed, safe to walk away; the footer carries what's next|
-|3 FORECAST|🔜|input will be needed soon (a gate or decision is approaching)|
-|3 FORECAST|🙋|input needed in THIS reply|
-|3 FORECAST|🏁|finished: the arc is closed, nothing next, nothing pending|
-|counts|⏳|progress counter on multi-part work|
-|input label|⬇️|starts the label line above a fenced block you must type or click|
-|parked|💤|zero-obligation parked idea; work worth recommending never gets it|
-|footer|🙋 / 🔜 / 🟢 / 🏁|final-section anchor; always matches the FORECAST slot|
+|⏳|progress counts|"⏳ 2 of 4 streams done" on multi-part work|
+|⬇️|input labels|starts the label line above a fenced block you must type or click|
+|💤|parked ideas|zero obligation; work worth recommending never gets it|
+|⚠️|warnings|marks the single load-bearing `> ⚠️` blockquote when one exists|
 
 Beyond the anchors, the contract covers footer mechanics (stable question IDs, complete outstanding set every time, no silently applied defaults), decision tables you answer with a two-character token, glyph-led progress lists, a must-read/reference fold for long replies, markdown devices measured against what the app actually renders, and a global ban on em and en dashes. The [site](https://toxmox.github.io/talking-to-dave/) previews every rule with your own options applied.
 
