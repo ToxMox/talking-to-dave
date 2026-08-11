@@ -74,6 +74,14 @@ test('current block is a no-op with no extra backup', () => {
   assert.equal(baks.length, 1);
 });
 
+test('swap log records the full stamped revision, dots included', () => {
+  const sb = sandbox({ name: 'Probe' });
+  writeFileSync(sb.mdPath, '<!-- BEGIN presentation-contract rev=0.0.1. old -->\nOLD\n<!-- END presentation-contract -->\n');
+  sb.run();
+  const log = readFileSync(join(sb.data, 'sync.log'), 'utf8');
+  assert.ok(log.includes('swapped rev 0.0.1 -> ' + version), log);
+});
+
 test('config edits converge at next sync (content compare, not rev compare)', () => {
   const sb = sandbox({ name: 'Probe' });
   writeFileSync(sb.mdPath, '<!-- BEGIN presentation-contract rev=0.0.1. old -->\nOLD\n<!-- END presentation-contract -->\n');

@@ -84,7 +84,9 @@ function main() {
     return;
   }
 
-  const stamped = (md.slice(b, md.indexOf('\n', b)).match(/rev=([^.\s]+)/) || [])[1] || 'unknown';
+  // The rev ends at the sentence period in the marker text, but contains
+  // periods itself, so stop at a period only when whitespace follows it.
+  const stamped = (md.slice(b, md.indexOf('\n', b)).match(/rev=(\S+?)\.?(?=\s|$)/) || [])[1] || 'unknown';
   if (md.slice(b, e + END.length) === block) {
     log('current at rev ' + version);
     return;
