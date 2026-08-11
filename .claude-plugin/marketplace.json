@@ -10,7 +10,7 @@
       "name": "talking-to-dave",
       "source": "./",
       "description": "A glanceable reply contract for Claude Code: anchor emoji, a footer that says what is needed from you, and a plugin that generates, installs, and updates it",
-      "version": "0.2.1"
+      "version": "0.2.2"
     }
   ]
 }

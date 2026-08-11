@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (2026-08-11)
+
+- Fix: when the resolved data dir holds no `config.json`, resolution scans the `talking-to-dave*` siblings under `~/.claude/plugins/data/` and uses the one that does. The harness names this plugin's data dir inconsistently across session contexts (observed live on resume), which made configured installs look unconfigured and emit a spurious migration nudge.
+
 ## 0.2.1 (2026-08-11)
 
 - Fix: `CLAUDE_PLUGIN_DATA` is honored only when its final path segment starts with `talking-to-dave`. The variable can leak from other plugins' contexts into the session shell (observed live), which previously misrouted config reads and log writes; the configure and sync skills resolve the data directory with the same rule.
