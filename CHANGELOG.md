@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (2026-08-11)
 
 - Session-start nudge: with no saved config the hook offers `/talking-to-dave:configure` via context, distinguishing a fresh install from a pre-plugin marker block awaiting migration.
 - Swap announcement: a block update prints the new revision in one line instead of swapping silently.
