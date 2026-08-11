@@ -21,7 +21,9 @@ function expectedBlock(cfg) {
 
 function sandbox(cfg) {
   const home = mkdtempSync(join(tmpdir(), 'ttd-home-'));
-  const data = mkdtempSync(join(tmpdir(), 'ttd-data-'));
+  // The prefix matters: dataDir() only honors CLAUDE_PLUGIN_DATA when its
+  // basename starts with the plugin name.
+  const data = mkdtempSync(join(tmpdir(), 'talking-to-dave-data-'));
   mkdirSync(join(home, '.claude'), { recursive: true });
   if (cfg) writeFileSync(join(data, 'config.json'), JSON.stringify(cfg));
   const mdPath = join(home, '.claude', 'CLAUDE.md');
@@ -124,6 +126,23 @@ test('a swap announces the new revision on stdout', () => {
   assert.ok(out.includes('updated to rev ' + version), out);
   const again = sb.run();
   assert.ok(!again.includes('updated to rev'), again);
+});
+
+test('a leaked foreign CLAUDE_PLUGIN_DATA is ignored in favor of the fallback', () => {
+  const sb = sandbox(null);
+  const home = dirname(dirname(sb.mdPath));
+  const fallback = join(home, '.claude', 'plugins', 'data', 'talking-to-dave-talking-to-dave');
+  mkdirSync(fallback, { recursive: true });
+  writeFileSync(join(fallback, 'config.json'), JSON.stringify({ name: 'Probe' }));
+  const decoy = mkdtempSync(join(tmpdir(), 'other-plugin-data-'));
+  writeFileSync(sb.mdPath, '<!-- BEGIN presentation-contract rev=0.0.1. old -->\nOLD\n<!-- END presentation-contract -->\n');
+  execFileSync(process.execPath, [syncScript], {
+    env: { ...process.env, HOME: home, USERPROFILE: home, CLAUDE_PLUGIN_DATA: decoy },
+    encoding: 'utf8',
+  });
+  assert.equal(sb.md(), expectedBlock({ name: 'Probe' }) + '\n');
+  assert.equal(readdirSync(decoy).length, 0);
+  assert.ok(existsSync(join(fallback, 'sync.log')));
 });
 
 test('--chat-prefs prints and records the export', () => {
