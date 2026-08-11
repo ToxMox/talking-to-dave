@@ -1,10 +1,72 @@
 # talking-to-dave
 
-A glanceable reply contract for Claude Code, packaged as a plugin that generates, installs, and updates it.
+[![ci](https://github.com/ToxMox/talking-to-dave/actions/workflows/ci.yml/badge.svg)](https://github.com/ToxMox/talking-to-dave/actions/workflows/ci.yml)
 
-Claude Code answers in whatever shape it feels like, so you reread every reply hunting for what happened and what it needs from you. This plugin installs a reply contract into your user-scope `~/.claude/CLAUDE.md`: anchor emoji open line 1 (what happened, how it is going, whether you are needed), the footer always closes with what is outstanding, and everything in between is built for scanning. "Dave" is the default name; the contract is generated around whatever name you pick.
+A glanceable reply contract for Claude Code, packaged as a plugin that generates it around you, installs it, and keeps it current.
 
-The full story, a live configurator, and a preview of every rule: open `site/talking-to-dave.html` in a browser.
+**Docs, full rule preview, and the claude.ai companion text: <https://toxmox.github.io/talking-to-dave/>**
+
+## The problem
+
+Claude Code answers in whatever shape it feels like, so you reread every reply hunting for what happened and what it needs from you. This plugin installs a reply contract into your user-scope `~/.claude/CLAUDE.md`: anchor emoji open line 1 (what happened, how it is going, whether you are needed), a footer always closes with what is outstanding, and everything in between is built for scanning. "Dave" is the default name; the contract is generated around whatever name you pick.
+
+## What a reply looks like
+
+Every substantive reply opens with a three-emoji anchor cluster and a bold bottom line, and ends with a footer that says exactly what is needed from you:
+
+> ✅ 🌤️ 🙋 **Webhook signature bug fixed and deployed; one retry-policy decision left.**
+>
+> - **Root cause**: the signature check read the request body after middleware had already parsed it, so every webhook failed closed.
+> - **Fix**: raw body captured before parsing; regression test added.
+> - **Verification**: ⏳ 2 of 2 suites green on the deployed build.
+>
+> 🙋 Needs you:
+>
+> **Q1 (preference, ignoring it keeps current behavior): how long should failed webhooks retry?**
+>
+> |type|option|consequence|
+> |-|-|-|
+> |1a|retry for 24h|no lost events, slower failure surfacing|
+> |1b|drop after 3 tries|fast alerts, rare event loss on long outages|
+
+You answer `1a` (or in your own words) and move on. No rereading, no buried questions.
+
+## The anchor palette
+
+Line 1 carries three slots in fixed order: STATUS (what happened), WEATHER (how the overall effort is going), FORECAST (whether you will be needed). The footer anchor always matches the FORECAST slot.
+
+|Slot|Emoji|Meaning|
+|-|-|-|
+|1 STATUS|✅|done / success|
+|1 STATUS|🚀|launched / running in background|
+|1 STATUS|🔎|findings / answer / recommendation|
+|1 STATUS|⚠️|partial, degraded, needs attention|
+|1 STATUS|❌|failed / blocked|
+|2 WEATHER|☀️|on plan, going well|
+|2 WEATHER|🌤️|minor bumps, handled without you|
+|2 WEATHER|⛈️|going wrong or off plan: worth skimming to steer|
+|3 FORECAST|🟢|no input needed, safe to walk away; the footer carries what's next|
+|3 FORECAST|🔜|input will be needed soon (a gate or decision is approaching)|
+|3 FORECAST|🙋|input needed in THIS reply|
+|3 FORECAST|🏁|finished: the arc is closed, nothing next, nothing pending|
+|counts|⏳|progress counter on multi-part work|
+|input label|⬇️|starts the label line above a fenced block you must type or click|
+|parked|💤|zero-obligation parked idea; work worth recommending never gets it|
+|footer|🙋 / 🔜 / 🟢 / 🏁|final-section anchor; always matches the FORECAST slot|
+
+Beyond the anchors, the contract covers footer mechanics (stable question IDs, complete outstanding set every time, no silently applied defaults), decision tables you answer with a two-character token, glyph-led progress lists, a must-read/reference fold for long replies, markdown devices measured against what the app actually renders, and a global ban on em and en dashes. The [site](https://toxmox.github.io/talking-to-dave/) previews every rule with your own options applied.
+
+## Who it is for
+
+Anyone who scans replies instead of reading them top to bottom: ADHD readers first (that is where it came from), but the contract is just structure, and structure helps everyone who juggles several Claude Code sessions and wants each reply to answer "what happened, and am I needed?" in one glance.
+
+## How it works
+
+- **One generator, three consumers.** `lib/builder.js` is the single source of truth for the contract text. The hooks and skills run it with node, the site page inlines it at build time, and golden-fixture tests pin its output byte for byte.
+- **Configure once.** `/talking-to-dave:configure` walks you through the options (name, cluster slots, decision tables, dialog policy, and so on), saves them as `config.json` in the plugin data directory, and writes the generated contract into `~/.claude/CLAUDE.md` between two marker comments. Everything outside the markers is yours and is never touched.
+- **Auto-sync at session start.** A SessionStart hook regenerates the contract from your saved config and the installed plugin version, then compares it against what sits between the markers. Identical means no-op. Different (new plugin version, changed config, or a hand edit inside the markers) means the whole file is backed up to `CLAUDE.md.bak` first, then just the block is swapped. The hook fails open: it can never break session start.
+- **Updates.** A new plugin version ships new contract text; `claude plugin update talking-to-dave` pulls it, and the next session start swaps the block. Your saved options survive updates because they live in the data directory, not in the plugin.
+- **Live dialog enforcement.** If you set the dialog policy to `ban`, a PreToolUse hook blocks the AskUserQuestion dialog at the tool layer, so the rule holds even when the model forgets it.
 
 ## Install
 
@@ -19,31 +81,34 @@ Then, in any Claude Code session:
 /talking-to-dave:configure
 ```
 
-That walks you through the options (name, cluster slots, decision tables, dialog policy, and so on), saves them, and writes the generated contract into `~/.claude/CLAUDE.md` between two marker comments. Everything outside the markers is yours and is never touched.
+## The four skills
 
-## Update
-
-```
-claude plugin update talking-to-dave
-```
-
-The next session start notices the new plugin version and swaps the marker block byte-exact, taking a `CLAUDE.md.bak` backup first. Your saved options survive updates: they live in the plugin data directory, not in the plugin.
-
-## What ships
-
-| Piece | What it does |
+|Skill|What it does|
 |-|-|
-| `lib/builder.js` | The contract generator, single source of truth for plugin and page |
-| `hooks/sync.mjs` | SessionStart hook: swaps the marker block when the installed version is newer |
-| `hooks/dialog-policy.mjs` | PreToolUse hook: enforces a banned AskUserQuestion dialog live |
-| `skills/configure` | In-session setup and reconfiguration |
-| `skills/sync` | Force a regenerate and swap now |
-| `skills/chat-preferences` | Print the claude.ai personal-preferences text (chat reads nothing from disk) |
-| `skills/measure` | Re-run the display-capability test cards |
-| `docs/` | Measured display-capability references the contract points at |
-| `site/` | The documentation and configurator page |
+|`/talking-to-dave:configure`|Set up or change the contract: name, ten toggles, dialog policy; saves and syncs|
+|`/talking-to-dave:sync`|Force a regenerate and swap now, and report what the last sync did|
+|`/talking-to-dave:chat-preferences`|Print the claude.ai personal-preferences text for pasting into chat settings|
+|`/talking-to-dave:measure`|Re-run the display-capability test cards and report deltas against the shipped docs|
 
-Requires node on PATH (the hooks and the generator run with it).
+## What it writes, and where
+
+|Path|Content|
+|-|-|
+|`~/.claude/CLAUDE.md`|the contract, strictly between `<!-- BEGIN presentation-contract -->` and `<!-- END presentation-contract -->` markers|
+|`~/.claude/CLAUDE.md.bak` (then `.bak1`, ...)|full-file backup taken before every write|
+|`<data>/config.json`|your saved options|
+|`<data>/claude-chat-preferences.md`|the claude.ai text as last exported|
+|`<data>/sync.log`|one line per sync decision, including errors|
+
+`<data>` is the directory Claude Code passes as `CLAUDE_PLUGIN_DATA`, typically `~/.claude/plugins/data/talking-to-dave-talking-to-dave/`.
+
+## claude.ai chat preferences
+
+The chat apps read nothing from disk, so the plugin also generates a companion text for claude.ai Settings, personal preferences. It is deliberately an ethos rather than a rulebook, because in chat the likely failure is over-formatting. `/talking-to-dave:chat-preferences` prints it ready to paste, and the session-start sync nudges you when your saved config has drifted from what was last pasted.
+
+## Requirements
+
+Node.js on PATH: the hooks, skills, and generator all run with `node`. Any recent LTS works; CI runs on 22.
 
 ## Uninstall
 
@@ -52,12 +117,13 @@ Requires node on PATH (the hooks and the generator run with it).
 ## Development
 
 ```
-node --test                # golden-fixture and sync tests
-node scripts/build.mjs     # rebuild site/talking-to-dave.html from src + builder
-claude plugin validate .   # manifest sanity
+node --test                      # golden-fixture and sandboxed sync tests
+node scripts/build.mjs           # rebuild site/talking-to-dave.html + site/index.html
+node scripts/build.mjs --check   # verify the committed site artifacts are current
+claude plugin validate .         # manifest sanity
 ```
 
-The golden fixtures were produced by the original configurator page's generator, so the tests prove the extraction stayed byte-faithful. CI runs all three.
+The golden fixtures were produced by the original configurator page's generator, so the tests prove the extraction stayed byte-faithful. The site page is assembled from `site/src/page.html` with the builder inlined at build time, so the page and the plugin can never drift; GitHub Pages deploys `site/` on every push to main. CI runs the tests, the build check, and manifest validation.
 
 ## License
 
