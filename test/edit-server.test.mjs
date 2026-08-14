@@ -182,6 +182,7 @@ test('a valid save writes config.json and regenerates the output style', async (
   const body = await res.json();
   assert.equal(body.ok, true);
   assert.equal(body.rev, version);
+  assert.equal(body.changed, true);
   assert.ok(body.sync.includes('output style regenerated at rev ' + version), body.sync);
 
   const saved = sb.savedConfig();
@@ -203,6 +204,16 @@ test('the name is sanitized the same way the builder does it', async (t) => {
   const res = await sb.save({ ...VALID, name: '  Da|ve`#  ' });
   assert.equal(res.status, 200);
   assert.equal(sb.savedConfig().name, 'Dave');
+});
+
+test('a save that changes nothing reports the style as already current', async (t) => {
+  const sb = await start(t, { name: 'Probe' });
+  assert.equal((await (await sb.save(VALID)).json()).changed, true);
+  const body = await (await sb.save(VALID)).json();
+  assert.equal(body.ok, true);
+  assert.equal(body.changed, false, 'an identical re-save must not claim a write');
+  assert.ok(sb.stdout().includes('output style already current at rev ' + version), sb.stdout());
+  assert.ok(sb.stdout().includes('output style regenerated at rev ' + version), 'the first save still announces its write: ' + sb.stdout());
 });
 
 test('saving twice is allowed and the server keeps serving', async (t) => {

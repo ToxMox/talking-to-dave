@@ -50,7 +50,18 @@ test('the hook writes the output style and announces the revision', () => {
   assert.ok(out.includes('after /clear'), out);
   const again = sb.run();
   assert.ok(!again.includes('output style regenerated'), again);
-  assert.ok(sb.log().includes('output style current at rev ' + version), sb.log());
+  assert.ok(sb.log().includes('created output style rev ' + version), sb.log());
+  assert.ok(!sb.log().includes('output style current'), 'a no-op run logs nothing: ' + sb.log());
+});
+
+test('a repeated hook run inside the debounce window stays quiet', () => {
+  const sb = sandbox({ name: 'Probe' });
+  const first = sb.run();
+  assert.ok(first.includes('does not select it'), first);
+  const second = sb.run();
+  assert.ok(!second.includes('does not select it'), second);
+  const warnings = sb.log().split('\n').filter((l) => l.includes('outputStyle not selected'));
+  assert.equal(warnings.length, 1, sb.log());
 });
 
 test('a hand edit inside the style file loses to the generator', () => {
@@ -209,6 +220,20 @@ test('no config without a block nudges plain configure', () => {
   assert.ok(out.includes('installed but not configured'), out);
   assert.ok(out.includes('/talking-to-dave:configure'), out);
   assert.equal(sb.md(), '# Mine\n');
+  assert.deepEqual(readdirSync(sb.data), [], 'an unconfigured run leaves no trace');
+});
+
+test('an unconfigured run never creates the data directory', () => {
+  const sb = sandbox(null);
+  // the ghost mirrors the stray "-inline" dir observed live: a data-dir name
+  // the harness used in one context, holding nothing
+  const ghost = join(sb.home, '.claude', 'plugins', 'data', 'talking-to-dave-inline');
+  const out = execFileSync(process.execPath, [syncScript], {
+    env: { ...process.env, HOME: sb.home, USERPROFILE: sb.home, CLAUDE_PLUGIN_DATA: ghost },
+    encoding: 'utf8',
+  });
+  assert.ok(out.includes('installed but not configured'), out);
+  assert.equal(existsSync(ghost), false, 'the ghost dir must not be seeded');
 });
 
 test('no config with an existing block nudges migration and writes nothing', () => {
@@ -219,6 +244,7 @@ test('no config with an existing block nudges migration and writes nothing', () 
   assert.ok(out.includes('existing contract block (rev 2026-08-11)'), out);
   assert.ok(out.includes('/talking-to-dave:configure'), out);
   assert.equal(sb.md(), before);
+  assert.deepEqual(readdirSync(sb.data), [], 'an unconfigured run leaves no trace');
 });
 
 test('a config in a sibling talking-to-dave data dir is found when the given dir is empty', () => {

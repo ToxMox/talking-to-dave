@@ -1852,7 +1852,9 @@ var CONTRACT_REV="0.4.0";
           return body;
         });
       }).then(function(body){
-        saySave("Saved at rev "+(body.rev||"?")+". It takes effect in your next Claude Code session or after /clear.","ok");
+        saySave(body.changed===false
+          ?"Saved at rev "+(body.rev||"?")+"; the rendered style was already current, so nothing on disk changed."
+          :"Saved at rev "+(body.rev||"?")+". It takes effect in your next Claude Code session or after /clear.","ok");
         closeBtn.hidden=false; /* keeping the editor open stays the default */
       }).catch(function(err){
         if(!reached)return markClosed();

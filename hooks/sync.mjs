@@ -23,7 +23,7 @@
  * Fail-open: a SessionStart hook must never break session start, so every
  * error lands in sync.log in the plugin data dir and the exit code stays 0.
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { buildOutputStyle, buildChatPreferences, STYLE_NAME } from '../lib/builder.js';
@@ -40,11 +40,31 @@ const stylePath = () => join(claudeDir(), 'output-styles', STYLE_NAME + '.md');
 const settingsPath = () => join(claudeDir(), 'settings.json');
 const mdPath = () => join(claudeDir(), 'CLAUDE.md');
 
+/* Appends only when the data dir already exists (it does whenever a config
+   does). Never creates the dir: a log line about nothing is what used to seed
+   stray per-context data dirs whenever the harness named the dir differently. */
 function log(msg) {
   try {
-    mkdirSync(dataDir(), { recursive: true });
-    appendFileSync(join(dataDir(), 'sync.log'), new Date().toISOString() + ' ' + msg + '\n');
+    const dir = dataDir();
+    if (!existsSync(dir)) return;
+    appendFileSync(join(dir, 'sync.log'), new Date().toISOString() + ' ' + msg + '\n');
   } catch {}
+}
+
+/* The harness can spawn several SessionStart hook processes for one event
+   (observed live: 3-4 complete runs milliseconds apart on a single hooks.json
+   registration), so advisory output debounces: true when another hook-mode run
+   touched the stamp inside the window. Touch-then-check is best effort under
+   truly simultaneous spawns. Real writes are never gated by this. */
+function recentHookRun() {
+  try {
+    const p = join(dataDir(), 'last-hook-run');
+    const fresh = existsSync(p) && Date.now() - statSync(p).mtimeMs < 20000;
+    writeFileSync(p, '');
+    return fresh;
+  } catch {
+    return false;
+  }
 }
 
 try {
@@ -59,15 +79,16 @@ function main() {
     // Unconfigured install: never touch anything, but tell the session (hook
     // stdout lands in model context) so configure gets offered, and say when
     // an existing pre-plugin block is waiting to be migrated.
+    // Deliberately no log() here: an unconfigured run must leave no trace on
+    // disk, or it seeds an empty data dir in every context whose
+    // CLAUDE_PLUGIN_DATA name differs (observed live: talking-to-dave-inline).
     const md = read(mdPath());
     const b = md.indexOf(BEGIN);
     if (b >= 0) {
       const stamped = stampedRev(md, b);
       process.stdout.write('talking-to-dave: found an existing contract block (rev ' + stamped + ') but no saved config. Offer /talking-to-dave:configure, which detects and preserves the block\'s choices.\n');
-      log('no config yet; existing block at rev ' + stamped + '; run /talking-to-dave:configure');
     } else {
       process.stdout.write('talking-to-dave: installed but not configured. Offer /talking-to-dave:configure when convenient.\n');
-      log('no config yet; run /talking-to-dave:configure');
     }
     return;
   }
@@ -82,9 +103,13 @@ function main() {
     return;
   }
 
+  // Advisory output (the nudges and warnings below) prints once per burst of
+  // duplicate hook spawns; --install is an explicit action and never debounced.
+  const quiet = !args.has('--install') && recentHookRun();
+
   // Staleness nudge: the exported copy is what the user last pasted into
   // claude.ai; never overwrite it here, only compare.
-  if (existsSync(prefsPath) && readFileSync(prefsPath, 'utf8') !== prefsNow) {
+  if (!quiet && existsSync(prefsPath) && readFileSync(prefsPath, 'utf8') !== prefsNow) {
     process.stdout.write('talking-to-dave: your claude.ai chat preferences copy is stale; run /talking-to-dave:chat-preferences and paste the new text.\n');
     log('chat preferences stale');
   }
@@ -93,7 +118,7 @@ function main() {
   const o = { ...cfg, rev: version, docsPath: join(pluginRoot, 'docs').replace(/\\/g, '/') + '/' };
   writeStyle(buildOutputStyle(o), version);
   if (args.has('--install')) selectStyle();
-  else warnUnselected();
+  else if (!quiet) warnUnselected();
   migrateClaudeMd();
 }
 
@@ -110,10 +135,8 @@ function read(path) {
 function writeStyle(content, version) {
   const p = stylePath();
   const current = read(p);
-  if (current === content) {
-    log('output style current at rev ' + version);
-    return;
-  }
+  /* nothing changed, so nothing prints and nothing logs */
+  if (current === content) return;
   mkdirSync(join(claudeDir(), 'output-styles'), { recursive: true });
   writeFileSync(p, content);
   process.stdout.write('talking-to-dave: output style regenerated at rev ' + version + '. It takes effect in the next session or after /clear.\n');
@@ -138,10 +161,7 @@ function selectStyle() {
       return;
     }
   }
-  if (obj.outputStyle === STYLE_NAME) {
-    log('outputStyle already ' + STYLE_NAME);
-    return;
-  }
+  if (obj.outputStyle === STYLE_NAME) return;
   // Only on a real change, so this stays a one-time copy in practice, and
   // through backup_ so an unrelated settings.json.bak is never clobbered.
   const previous = obj.outputStyle;

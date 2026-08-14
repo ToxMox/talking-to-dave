@@ -150,7 +150,8 @@ Nothing leaves the machine, and a save survives the server: the config and the s
 |`.claude/questions/<session-id>/` (in each project)|the session's question queue: one markdown file per registered question plus its index. Untracked working state the model never stages; add `.claude/questions/` to your repo's ignore rules if the git-status noise bothers you|
 |`<data>/editor-secret`|the local editor's URL secret, so the link is stable; delete it to rotate|
 |`<data>/claude-chat-preferences.md`|the claude.ai text as last exported|
-|`<data>/sync.log`|one line per sync decision, including errors|
+|`<data>/sync.log`|one line per state change, warning, or error; a run that changes nothing logs nothing|
+|`<data>/last-hook-run`|zero-byte stamp that collapses the harness's duplicate session-start hook spawns to one set of messages|
 
 `<data>` is the directory Claude Code passes as `CLAUDE_PLUGIN_DATA`, typically `~/.claude/plugins/data/talking-to-dave-talking-to-dave/`.
 

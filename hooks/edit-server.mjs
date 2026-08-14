@@ -279,8 +279,12 @@ function save(req, res) {
     } catch (e) {
       return sendJson(res, 500, { error: 'the save failed: ' + ((e && e.message) || e) });
     }
-    process.stdout.write('talking-to-dave editor: config saved, output style regenerated at rev ' + version + '\n');
-    sendJson(res, 200, { ok: true, rev: version, sync: sync.trim() });
+    /* sync announces a real write on stdout and stays silent on the identical
+       no-op, so its output is what tells the two apart honestly */
+    const changed = sync.includes('output style regenerated');
+    process.stdout.write('talking-to-dave editor: config saved; output style '
+      + (changed ? 'regenerated at' : 'already current at') + ' rev ' + version + '\n');
+    sendJson(res, 200, { ok: true, rev: version, changed, sync: sync.trim() });
   });
 }
 
