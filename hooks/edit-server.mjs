@@ -42,8 +42,8 @@ import { execFileSync } from 'node:child_process';
 import { sanitizeName } from '../lib/builder.js';
 import { pluginRoot, pluginVersion, dataDir, loadConfig, DEFAULT_CONFIG, assemblePage } from '../lib/node-helpers.mjs';
 
-/* the eleven toggles, the only booleans a saved config may carry */
-const BOOLS = ['weather', 'forecast', 'tasks', 'docs', 'fold', 'decision', 'diff', 'emdash', 'visual', 'interactive', 'serial'];
+/* the twelve toggles, the only booleans a saved config may carry */
+const BOOLS = ['weather', 'forecast', 'tasks', 'docs', 'fold', 'decision', 'diff', 'emdash', 'visual', 'interactive', 'ids', 'serial'];
 const DLG = ['blockers', 'free', 'ban'];
 const QUEUE = ['widgets', 'text', 'off'];
 const KEYS = new Set(['name', 'dlg', 'queue', 'custom', ...BOOLS]);

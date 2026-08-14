@@ -21,6 +21,7 @@ const VALID = {
   name: 'Probe',
   weather: true, forecast: false, tasks: true, docs: true, fold: true,
   decision: true, diff: true, emdash: true, visual: true, interactive: true,
+  ids: false,
   queue: 'text', serial: true,
   dlg: 'free',
   custom: ['Name the branch.  ', '   ', 'Link the PR.'],
@@ -191,7 +192,8 @@ test('a valid save writes config.json and regenerates the output style', async (
   assert.equal(saved.dlg, 'free');
   assert.equal(saved.queue, 'text');
   assert.equal(saved.serial, true);
-  assert.equal(Object.keys(saved).length, 15);
+  assert.equal(saved.ids, false);
+  assert.equal(Object.keys(saved).length, 16);
 
   assert.equal(readFileSync(sb.stylePath, 'utf8'), expectedStyle(saved));
 });

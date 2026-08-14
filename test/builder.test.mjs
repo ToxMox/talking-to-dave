@@ -17,6 +17,7 @@ const base = {
   name: 'Dave',
   weather: true, forecast: true, tasks: true, docs: true, fold: true,
   decision: true, diff: true, emdash: true, visual: true, interactive: true,
+  ids: true,
   queue: 'widgets', serial: false,
   dlg: 'blockers',
 };
@@ -26,6 +27,7 @@ const cases = {
   'forecast-off': { ...base, forecast: false },
   'custom-name': { ...base, name: 'Alex', docs: false, dlg: 'free' },
   'dlg-ban': { ...base, dlg: 'ban', tasks: false },
+  'ids-off': { ...base, ids: false },
 };
 const customRules = [
   'Ship notes. When a change lands, name the branch and say whether CI is green.',
@@ -131,6 +133,18 @@ test('serial adds the one-topic discipline in both queue modes', () => {
   const serialText = buildOutputStyle({ ...base, queue: 'text', serial: true });
   assert.ok(serialText.includes('One topic at a time (serial)'));
   assert.ok(!buildOutputStyle({ ...base, queue: 'off', serial: true }).includes('One topic at a time'));
+});
+
+test('the ids toggle swaps the naming discipline whole', () => {
+  const on = buildOutputStyle(base);
+  assert.ok(on.includes('IDs carry names.'));
+  assert.ok(on.includes('When unsure, name it.'));
+  assert.ok(!on.includes('IDs never appear bare'));
+  const off = buildOutputStyle({ ...base, ids: false });
+  assert.ok(!off.includes('IDs carry names.'));
+  assert.ok(off.includes('IDs never appear bare'));
+  assert.ok(buildChatPreferences(base).includes('short human name'));
+  assert.ok(!buildChatPreferences({ ...base, ids: false }).includes('short human name'));
 });
 
 test('legacy boolean queue values coerce to the mode strings', () => {

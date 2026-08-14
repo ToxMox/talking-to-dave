@@ -489,6 +489,10 @@ details[open] summary{margin-bottom:.3rem}
           <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-diff" aria-label="What the diff fence option does">?</button><span class="tip" role="tooltip" id="tip-diff">Code changes fence as diff. A readout may borrow the same fence only when a red line genuinely must catch the eye, since a pass/fail checklist is a glyph-led list instead. Turning it OFF drops the diff-fence clause from the markdown rule; fenced blocks still name their language.</span></span>
         </div>
         <div class="optrow">
+          <label class="opt"><input type="checkbox" id="optIds" checked> IDs carry names</label>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-ids" aria-label="What the IDs carry names option does">?</button><span class="tip" role="tooltip" id="tip-ids">Adds the rule that an ID (Q1, T-1043, an issue number) usually brings its short human name along, with a plain-words gloss on first telling when the name alone is jargon, so a bare number never forces a scroll-back. Turning it OFF keeps only a one-sentence IDs-never-bare baseline inside the bullets rule, and the remaining rules renumber.</span></span>
+        </div>
+        <div class="optrow">
           <label class="opt"><input type="checkbox" id="optVisual" checked> Diagrams and charts</label>
           <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-visual" aria-label="What the diagrams and charts option does">?</button><span class="tip" role="tooltip" id="tip-visual">Adds the draw-the-shape rule: structures (flows, states, architectures) render as inline diagram widgets, and quantitative comparisons as real charts, on surfaces that support them. Turning it OFF keeps replies text-only, and the remaining rules renumber.</span></span>
         </div>
@@ -844,7 +848,7 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
 <section id="sec-rules" aria-labelledby="h-rules">
   <div class="sechead">
     <h2 id="h-rules"><span class="skick">The contract</span>The rules</h2>
-    <p class="lede">Sixteen rules in four families, each with a tiny rendered example. Together they are the whole contract; the legend at the top supplies the glyphs. The badge on each card is that rule's number in the contract you install, so it renumbers live as you switch features on and off at the <a href="#sec-install">top of the page</a>.</p>
+    <p class="lede">Seventeen rules in four families, each with a tiny rendered example. Together they are the whole contract; the legend at the top supplies the glyphs. The badge on each card is that rule's number in the contract you install, so it renumbers live as you switch features on and off at the <a href="#sec-install">top of the page</a>.</p>
   </div>
 
   <div class="rulegroup">
@@ -871,7 +875,7 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
         <div class="rex"><div class="reply"><p>&#x23F3; 2 of 4 streams done</p><ul class="tasks"><li><span class="box" aria-hidden="true">&#x2705;</span>schema migrated</li><li><span class="box" aria-hidden="true">&#x2705;</span>index rebuilt</li><li><span class="box" aria-hidden="true">&#x23F3;</span>backfill running</li><li><span class="box" aria-hidden="true">&#x274C;</span>parity check failed</li></ul><p>latency &#x2581;&#x2582;&#x2584;&#x2587;&#x2585;&#x2583;&#x2581; &#x00b7; coverage &#x2593;&#x2593;&#x2593;&#x2591;&#x2591;</p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="input">
-        <div class="rhead"><span class="rnum" aria-hidden="true">7</span><h4>Input labels</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">8</span><h4>Input labels</h4></div>
         <p>Anything the reader must type or click sits alone in a fenced block with literal inputs labeled; the label line above the block starts with &#x2B07;&#xFE0F;. Shell commands are tagged <code>bash</code>, one command per block, no leading <code>$</code>, no interleaved output, because that is exactly what earns the Run button.</p>
         <div class="rex"><div class="reply"><p>&#x2B07;&#xFE0F; Run this to restart the service (paste as-is):</p>
 <div class="copywrap"><pre>beaconctl restart --profile default</pre></div></div></div>
@@ -889,11 +893,16 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
       </div>
       <div class="rulecard" role="listitem" data-rule="bullet">
         <div class="rhead"><span class="rnum" aria-hidden="true">6</span><h4>One topic per bullet</h4></div>
-        <p>Bold lead noun, final state not the journey, and reach for bullets by default: two or more parallel things become bullets, never one welded paragraph. Prose is for a single argument that has to flow, and bullets nest one level where a point genuinely carries sub-points, two only when the content is really a tree. IDs never appear bare: a mentioned ID carries a human hook, built into the ID itself or added beside it.</p>
+        <p>Bold lead noun, final state not the journey, and reach for bullets by default: two or more parallel things become bullets, never one welded paragraph. Prose is for a single argument that has to flow, and bullets nest one level where a point genuinely carries sub-points, two only when the content is really a tree.</p>
         <div class="rex"><div class="reply"><ul><li><strong>Cache key</strong> now includes the locale; collisions gone.</li><li><strong>Flush endpoint</strong> added behind the admin scope (<code>T-0142 flush-scope</code>).<ul><li>Old callers keep working; the unscoped route 410s.</li></ul></li></ul></div></div>
       </div>
+      <div class="rulecard" role="listitem" data-rule="idnames">
+        <div class="rhead"><span class="rnum" aria-hidden="true">7</span><h4>IDs carry names</h4></div>
+        <p>An ID (Q1, T-1043, an issue number) is a lookup key, not a name: bare, it tends to send the reader scrolling back to remember what it was. So an ID usually brings its short human name along, with a plain-words gloss on first telling when the name alone is jargon, and an ID with no name yet gets a short hook coined once and reused. Repetition is judgment: relax while the mapping is fresh, name again when distance has likely cost it. When unsure, name it.</p>
+        <div class="rex"><div class="reply"><p><span class="dimtx">Bad:</span> Q3 and T-0142 are still open.</p><p><span class="dimtx">Good:</span> Q3 (source cleanup) and T-0142 (flush scope) are still open.</p></div></div>
+      </div>
       <div class="rulecard wide" role="listitem" data-rule="markdown">
-        <div class="rhead"><span class="rnum" aria-hidden="true">10</span><h4>Structural markdown</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">11</span><h4>Structural markdown</h4></div>
         <p>Two heading tiers anchor wrap-ups (status updates stay headerless): <code>#</code> is the loud one and <code>##</code> the quiet one, while <code>###</code> is indistinguishable from bold body text. Tables hold enumerable facts with numeric columns right-aligned, and they span the full pane, so two thin columns read as mostly whitespace. One <code>&gt; &#x26A0;&#xFE0F;</code> blockquote holds the load-bearing warning, and quotes nest properly when a quote inside a quote is real; <code>~~strikethrough~~</code> marks superseded content and nests inside bold correctly. A diff fence is for an actual diff, plus the rare readout where a red line must catch the eye; a real changeset belongs in the diff viewer, and a pass/fail checklist is a glyph-led list. Markdown checkbox lists render as real checkboxes rather than literal brackets, and footnotes render properly, the right home for an aside that would otherwise break a sentence. Numbered lists are reserved for true sequences; bullets otherwise. <strong>Link file paths rather than pasting them</strong>: the link hides the URL and one click opens the file, and the path is written as it appears from the working directory, since a <code>~/...</code> or absolute form does not resolve to a clickable target. HTML tags never render, they print literally.</p>
         <div class="rex"><div class="copywrap"><pre># What changed
 ## Parser
@@ -914,18 +923,18 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
 ```</pre></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="fold">
-        <div class="rhead"><span class="rnum" aria-hidden="true">13</span><h4>The fold</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">14</span><h4>The fold</h4></div>
         <p>Past roughly a screenful, one lone <code>---</code> separates must-read (above) from optional reference depth (below). Nothing load-bearing ever sits below the fold, so stopping at the fold is always safe.</p>
         <div class="rex"><div class="reply"><p><strong>Must-read summary lives here.</strong></p><hr class="fold"><p class="dimtx">Optional depth: internals, log digests, long tables. Skippable by construction.</p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="decision">
-        <div class="rhead"><span class="rnum" aria-hidden="true">14</span><h4>Decision tables</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">15</span><h4>Decision tables</h4></div>
         <p>Each Needs-you item is its own block: the question line first, then its options as a mini table directly beneath, then the next question. Never options before the ask, never two questions sharing one table. The "type" cell is the literal plain-ASCII token to answer with; free-form answers stay welcome.</p>
         <div class="rex"><div class="reply"><div class="scroll"><table><thead><tr><th>type</th><th>option</th><th>consequence</th></tr></thead><tbody><tr><td><code>1a</code></td><td>migrate now</td><td>one-time bake, then done</td></tr><tr><td><code>1b</code></td><td>defer</td><td>zero work now, debt remains</td></tr></tbody></table></div></div></div>
       </div>
 
       <div class="rulecard wide" role="listitem" data-rule="tiers">
-        <div class="rhead"><span class="rnum" aria-hidden="true">16</span><h4>Reply tiers, and judgment above them</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">17</span><h4>Reply tiers, and judgment above them</h4></div>
         <p><strong>Tier 1, one-liner:</strong> a direct answer with nothing pending gets the answer alone, no cluster and no footer. <strong>Tier 2, short:</strong> cluster, bold bottom line, bullets when the content is a set, no headers and no fold; the footer follows rule 2, so a short &#x1F7E2; reply whose body already says what's next may end without one. <strong>Tier 3, substantive:</strong> the full skeleton. When the tier is unclear, go up rather than down. Above all of it sits judgment: these are defaults, not a cage, and content is never contorted to fit them.</p>
         <div class="rex"><div class="reply"><p class="dimtx">Tier 1</p><p>Port 5000.</p><p class="dimtx">Tier 2</p><p><span class="cl">&#x2705; &#x2600;&#xFE0F; &#x1F7E2;</span> <strong>Cache warmed; the 404s are gone.</strong></p><p class="dimtx">Tier 3</p><p>the full skeleton, headers and fold and footer included</p></div></div>
       </div>
@@ -936,17 +945,17 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
     <h3 id="rg-devices">Devices</h3>
     <div class="rulegrid" role="list" aria-labelledby="rg-devices">
       <div class="rulecard" role="listitem" data-rule="visual">
-        <div class="rhead"><span class="rnum" aria-hidden="true">11</span><h4>Draw the shape</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">12</span><h4>Draw the shape</h4></div>
         <p>Structures (branching, cycles, state flows, 3+ interacting parts) get drawn instead of prosed: an inline diagram widget or an embedded figure carries the shape, prose carries the verdict, never both in full. Quantitative comparisons get real charts. Linear runs of a few steps stay prose, since a picture that merely decorates is noise, and teaching goes picture-first with a short prose walk.</p>
         <div class="rex"><div class="reply"><p class="dimtx">(an inline flowchart widget renders here: real boxes and arrows, not ASCII)</p><p><strong>Verdict</strong> stays in prose: the retry loop is the bottleneck.</p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="interactive">
-        <div class="rhead"><span class="rnum" aria-hidden="true">12</span><h4>Interactive widgets and forms</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">13</span><h4>Interactive widgets and forms</h4></div>
         <p>Sliders and live controls for teaching and what-if; clickable forms for structured input, whose submit arrives as a normal chat message; widget buttons for decisions rich enough to want icons or subtitles, the plain table when a typed token is quicker. Interaction must earn its place.</p>
         <div class="rex"><div class="reply"><p class="dimtx">(a form widget renders here; submitting it sends:)</p><p><code>Probe details - Render status: All rendered</code></p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="dialog">
-        <div class="rhead"><span class="rnum" aria-hidden="true">15</span><h4>The AskUserQuestion dialog</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">16</span><h4>The AskUserQuestion dialog</h4></div>
         <p>The pop-up question dialog follows the three-way policy picked at install: reserved for genuinely blocking decisions (the default), allowed whenever a small option set fits, or banned outright. The install and update prompts keep the matching settings.json permission in sync with the pick.</p>
         <div class="rex"><div class="reply"><p class="dimtx">Blockers only: the dialog interrupts once for "which schema do I migrate?", while preference questions wait in the footer.</p></div></div>
       </div>
@@ -957,12 +966,12 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
     <h3 id="rg-hygiene">Text hygiene</h3>
     <div class="rulegrid" role="list" aria-labelledby="rg-hygiene">
       <div class="rulecard" role="listitem" data-rule="emdash">
-        <div class="rhead"><span class="rnum" aria-hidden="true">8</span><h4>No em-dashes or en-dashes, global scope</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">9</span><h4>No em-dashes or en-dashes, global scope</h4></div>
         <p>Neither dash in any generated output: replies, code, comments, docs, commit messages, issue bodies, anything. Use a plain hyphen, a comma, parentheses, a colon, or a new sentence. (Both glyphs are banned from this very page, so the bad examples are spelled out.)</p>
         <div class="rex"><div class="reply"><p><span class="dimtx">Bad:</span> Fixed the parser (em dash) mostly.</p><p><span class="dimtx">Good:</span> Fixed the parser - mostly.</p><p><span class="dimtx">Bad:</span> pages 4(en dash)7 rebuilt.</p><p><span class="dimtx">Good:</span> pages 4-7 rebuilt.</p></div></div>
       </div>
       <div class="rulecard wide" role="listitem" data-rule="time">
-        <div class="rhead"><span class="rnum" aria-hidden="true">9</span><h4>No time estimates</h4></div>
+        <div class="rhead"><span class="rnum" aria-hidden="true">10</span><h4>No time estimates</h4></div>
         <p>No time estimates and no time-of-day remarks; frame on risk and outcome instead.</p>
         <div class="rex"><div class="reply"><p><span class="dimtx">Bad:</span> Should take about two hours this afternoon.</p><p><span class="dimtx">Good:</span> Low risk: the converter is covered by fixtures, so a bad landing is caught before release.</p></div></div>
       </div>
@@ -1129,7 +1138,15 @@ var CONTRACT_REV="0.4.0";
 
     rules.push("Length is guidance, not a box: aim short (status updates a few lines, wrap-ups about a screenful), but NEVER drop or over-compress load-bearing information to fit. Be intelligent about it. When detail is reference material rather than decision material, put it in a local file under `docs/`, self-contained HTML when it wants styling, link the path so one click opens it in a pane, and leave a 2-3 line digest inline. A published artifact leaves the machine for Anthropic's servers, so reach for one only when "+name+" asks for something shareable or off-machine.");
 
-    rules.push("One topic per bullet, bold lead noun, and reach for them by default: the moment a passage covers two or more parallel things (findings, causes, changes, trade-offs), it becomes bullets instead of one welded paragraph. Prose is for a single argument that has to flow. Nest one level where a point genuinely carries sub-points, two only when the content is really a tree. Describe final state, not the journey. IDs never appear bare: a mentioned ID carries a human hook, built into the ID itself or added beside it.");
+    var bulletRule="One topic per bullet, bold lead noun, and reach for them by default: the moment a passage covers two or more parallel things (findings, causes, changes, trade-offs), it becomes bullets instead of one welded paragraph. Prose is for a single argument that has to flow. Nest one level where a point genuinely carries sub-points, two only when the content is really a tree. Describe final state, not the journey.";
+    /* the ids rule owns the naming discipline when on; off keeps the original
+       one-sentence baseline inside the bullets rule, so neither state duplicates */
+    if(!o.ids)bulletRule+=" IDs never appear bare: a mentioned ID carries a human hook, built into the ID itself or added beside it.";
+    rules.push(bulletRule);
+
+    if(o.ids){
+      rules.push("IDs carry names. An ID (Q1, R17, T-1043, an issue number) is a lookup key, not a name: bare, it tends to send the reader scrolling back to remember what it was, and scroll-backs break the scan. So an ID usually brings its short human name along (\"Q3 (source cleanup)\"), with a plain-words gloss on first telling when the name alone is jargon; an ID with no name yet gets a short hook coined once and reused. How often the name repeats is judgment: a tight passage about one thing can relax to the bare ID while the mapping is fresh, and the name returns when distance has likely cost it. When unsure, name it.");
+    }
 
     rules.push("Anything "+name+" must type or click sits alone in a fenced block with literal inputs labeled; the label line above the block starts with \u2b07\ufe0f. Shell commands are tagged `bash`, one command per block, no leading `$`, no interleaved output, because that is exactly what earns the Run button.");
 
@@ -1240,6 +1257,9 @@ var CONTRACT_REV="0.4.0";
     p.push("Say what you need from me at the end, plainly. When nothing is needed, close with what happens next rather than a dead end, and say so when the work is fully done. Never bury a question in the middle of a message.");
     p.push("Break sets into bullets. Two or more parallel things (findings, causes, options, trade-offs) belong in a list with the key noun leading each item, not welded into a paragraph. A single argument that has to flow stays prose.");
     p.push("Describe the final state, not the journey. I care what is true now, not the sequence of attempts that got there.");
+    if(o.ids){
+      p.push("When you mention an ID or numbered item (Q1, T-1043, an issue number), carry its short human name with it rather than the bare number, so I never scroll back to remember what it was.");
+    }
     if(o.visual){
       p.push("When a structure or comparison is easier to see than to read, show it: a small diagram or chart beats a paragraph describing one.");
     }
@@ -1585,7 +1605,7 @@ var CONTRACT_REV="0.4.0";
       name:sanitizeName(nameEl.value),
       weather:g("optWeather"), forecast:g("optForecast"), tasks:g("optTasks"), docs:g("optDocs"),
       fold:g("optFold"), decision:g("optDecision"), diff:g("optDiff"),
-      emdash:g("optEmdash"),
+      emdash:g("optEmdash"), ids:g("optIds"),
       visual:g("optVisual"), interactive:g("optInteractive"),
       queue:document.getElementById("selQueue").value, serial:g("optSerial"),
       dlg:document.getElementById("selDialog").value,
@@ -1596,7 +1616,7 @@ var CONTRACT_REV="0.4.0";
      so a card's badge is always the rule number the reader would install. */
   var RULE_ORDER=[
     {key:"bottomline"},{key:"needsyou"},{key:"queue",opt:"queue"},{key:"counts"},{key:"length"},
-    {key:"bullet"},{key:"input"},{key:"emdash",opt:"emdash"},
+    {key:"bullet"},{key:"idnames",opt:"ids"},{key:"input"},{key:"emdash",opt:"emdash"},
     {key:"time"},{key:"markdown"},{key:"visual",opt:"visual"},{key:"interactive",opt:"interactive"},
     {key:"fold",opt:"fold"},{key:"decision",opt:"decision"},{key:"dialog"},
     {key:"tiers"}
@@ -1637,7 +1657,7 @@ var CONTRACT_REV="0.4.0";
      out of quota, which is what the try/catch absorbs; the page then simply
      starts from its defaults. */
   var CFG_KEY="ttd-config";
-  var OPT_IDS=["optWeather","optForecast","optTasks","optDocs","optFold","optDecision","optDiff","optEmdash","optVisual","optInteractive","optSerial"];
+  var OPT_IDS=["optWeather","optForecast","optTasks","optDocs","optFold","optDecision","optDiff","optEmdash","optIds","optVisual","optInteractive","optSerial"];
   function eachOpt(fn){OPT_IDS.forEach(function(id){fn(document.getElementById(id),id);});}
   function saveCfg(){
     if(BRIDGE)return; /* the editor's origin changes every run, so the store there is useless */
