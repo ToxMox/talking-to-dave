@@ -67,6 +67,7 @@ from a cited upstream source. INFERRED means reasoned without direct observation
 | reply link traversing out of the working directory (`[f.md](../../Users/...)`) | GOOD | `../` traversal resolves: a session-scratchpad file opens in the file pane exactly like a repo path | MEASURED (live reply 2026-08-14) |
 | relative link inside a pane-rendered markdown file | GOOD | navigates the file pane to the target file, so a generated index works as a jump table | MEASURED (live reply 2026-08-14) |
 | reply link to a moved or deleted file | WEAK | the pane opens a "couldn't read this file" card naming the path; nothing else happens | MEASURED (live reply 2026-08-14) |
+| widget link with the `claude://` scheme | NONE | `openLink` drops it silently; a plain anchor is NOT intercepted and navigates the widget's own iframe, leaving a blank white frame where the widget was. No dialog, no app launch. Never put a non-https href in a widget anchor | MEASURED (live reply 2026-08-14) |
 
 ## 3. Devices worth using
 
