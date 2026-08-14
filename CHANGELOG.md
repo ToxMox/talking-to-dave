@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0 (2026-08-14)
+
+- Browser editor: `/talking-to-dave:configure` now starts an ephemeral local server (`hooks/edit-server.mjs`) that serves the configurator page from the installed plugin with your saved config injected, and hands you a link. Save writes `config.json` and regenerates the output style immediately. The in-session interview stays in the same skill as the fallback for headless, SSH, or no-browser sessions, and whenever you ask for it.
+- Editor posture: loopback bind on an OS-assigned port, a random 128-bit secret prefixing every route, a Host-header check against DNS rebinding, no CORS header, and strict shape validation on the save route. Only an authorized request resets the idle clock, and it never writes `settings.json`.
+- Editor lifetime follows the tab: the open page heartbeats on `/ping`, so the timeout (still 600 seconds, `--timeout <seconds>`) is the grace period after the last editor tab goes away. `/stop` shuts it down at once, which is what the new status pill's Stop button and the "done, close the editor" button offered after a save both use; it never stops itself while you are editing.
+- Stable editor URL: the secret is generated once and kept in `<data>/editor-secret` (delete it to rotate), and the port is fixed at 51966 (`--port <n>` to move it), so relaunching gives you the same link. A busy port is pinged with the secret first: our own running instance answers, so the launch prints its URL and exits rather than starting a twin; a stranger sends the editor to an OS-assigned port instead.
+- Editor status: a live/closed pill in the top right, fed by the heartbeat. A failed ping or save flips it to closed, disables Save, and says to relaunch with `/talking-to-dave:configure`, with your ticks left on the page.
+- Custom rules got a control: the configurator page gained a rules box (one rule per line) wired into the live preview, on the published page and in the local editor alike.
+- The published page stays preview-only: it has no Save button and no way to reach your machine.
+- Retired the legacy marker-wrapped carrier: `buildContract` and the BEGIN/END marker helpers are gone from `lib/builder.js`, and the page previews the output-style file (frontmatter, stamp, body) that the plugin actually installs. Migration of a pre-0.3.0 block out of `~/.claude/CLAUDE.md` is unaffected; that machinery lives in the sync hook.
+- Golden fixtures now pin the output-style file for every case; their bodies are unchanged byte for byte.
+
+## 0.3.0 (2026-08-14)
+
+- New carrier: the contract now installs as a user-scope Claude Code output style at `~/.claude/output-styles/talking-to-dave.md`, selected by `"outputStyle": "talking-to-dave"` in `~/.claude/settings.json`. The style file is generated whole and plugin-owned, so a sync rewrites it without backups or markers. Requires Claude Code 2.0.37 or newer, for the `keep-coding-instructions` frontmatter field.
+- One-time migration: a leftover `<!-- BEGIN presentation-contract -->` block in `~/.claude/CLAUDE.md` is removed on the next sync, after a full-file backup, so the rules are never live from two carriers at once.
+- Drift warning: session-start sync says so when `~/.claude/settings.json` selects some other output style, or none; `/talking-to-dave:sync` sets it.
+- New option, `custom`: your own rules, stored in `config.json` and appended verbatim to the generated numbered list, so they read as first-class rules and survive plugin updates. The em/en-dash ban is never applied to them. They shape Claude Code only; the claude.ai chat text stays generated.
+- `buildOutputStyle` joins `buildContract` on one shared body builder, both golden-fixture tested; the contract block's output is unchanged byte for byte.
+
 ## 0.2.2 (2026-08-11)
 
 - Fix: when the resolved data dir holds no `config.json`, resolution scans the `talking-to-dave*` siblings under `~/.claude/plugins/data/` and uses the one that does. The harness names this plugin's data dir inconsistently across session contexts (observed live on resume), which made configured installs look unconfigured and emit a spurious migration nudge.

@@ -340,11 +340,45 @@ fieldset{border:1px solid var(--border); border-radius:10px; padding:.6rem .9rem
 legend{font-weight:700; font-size:.85rem; padding:0 .35rem}
 .cfg label.opt{display:flex; gap:.5rem; align-items:baseline; margin:.32rem 0; font-size:.9rem; cursor:pointer}
 .cfg input[type="checkbox"]{accent-color:var(--accent); transform:translateY(1px)}
-.cfg input[type="text"],.cfg select{
+.cfg input[type="text"],.cfg select,.cfg textarea{
   font:inherit; color:var(--fg); background:var(--code); border:1px solid var(--border);
   border-radius:6px; padding:.45rem .6rem; width:100%;
 }
 .cfg select{width:auto; flex:0 1 auto; cursor:pointer}
+.cfg textarea{
+  font-family:ui-monospace,Consolas,"Cascadia Mono",Menlo,monospace;
+  font-size:.85rem; line-height:1.45; resize:vertical; min-height:4.4rem;
+}
+.customrow{margin:.7rem 0 .2rem}
+.customrow .rowlab{display:flex; align-items:center; gap:.5rem; margin-bottom:.3rem}
+.customrow label{font-size:.9rem; font-weight:700}
+/* local editor only: a live/closed status pill, created by script when the
+   page is served by the plugin's own server */
+.editpill{
+  position:fixed; top:.7rem; right:1rem; z-index:60;
+  display:flex; align-items:center; gap:.5rem; max-width:min(26rem,84vw);
+  background:var(--bg2); color:var(--fg); border:1px solid var(--green);
+  border-radius:999px; padding:.4rem .75rem;
+  font:600 .78rem/1.35 system-ui,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.3);
+}
+.editpill.closed{border-radius:10px; border-color:var(--red); font-weight:400}
+/* the pill floats over the hero, so the hero starts below it */
+body.haspill .herotop{padding-top:2.9rem}
+.editpill .dot{width:.55rem; height:.55rem; border-radius:50%; background:var(--green); flex:0 0 auto}
+.editpill.closed .dot{background:var(--red)}
+.editpill .pstop{
+  font:600 .74rem/1 system-ui,sans-serif; color:var(--fg);
+  background:var(--bg3); border:1px solid var(--border); border-radius:6px;
+  padding:.32rem .55rem; cursor:pointer; white-space:nowrap;
+}
+.editpill .pstop:hover{border-color:var(--accent)}
+.editpill .pstop[hidden]{display:none}
+.saverow{display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin:.7rem 0 0}
+.saverow .inlinebtn[hidden]{display:none}
+.saverow .inlinebtn[disabled]{opacity:.55; cursor:not-allowed}
+.saverow .msg{font-size:.82rem; color:var(--dim)}
+.saverow .msg.ok{color:var(--green)}
+.saverow .msg.bad{color:var(--red)}
 .note{color:var(--dim); font-size:.8rem; margin:.4rem 0 0}
 details{background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:.5rem .8rem; margin:.5rem 0}
 summary{cursor:pointer; font-weight:700; font-size:.92rem}
@@ -402,7 +436,7 @@ details[open] summary{margin-bottom:.3rem}
 <section id="sec-install" aria-labelledby="h-install">
   <div class="sechead">
     <h2 id="h-install"><span class="skick">Install</span>Install the plugin, then make it yours</h2>
-    <p class="lede">Two commands install it, and the plugin keeps the contract in your user-scope <code>~/.claude/CLAUDE.md</code> current from then on, so it governs <strong>every project</strong> on the machine. Tick options here to preview the result, then run <code>/talking-to-dave:configure</code> in a session to apply them for real. Everything regenerates live: rule numbering stays contiguous, the palette lists only enabled anchors, and disabled features leave no dangling references, in any combination. The rest of the page shows you what you just installed.</p>
+    <p class="lede">Two commands install it, and the plugin keeps the contract current from then on in a user-scope Claude Code output style at <code>~/.claude/output-styles/talking-to-dave.md</code>, so it governs <strong>every project</strong> on the machine. Tick options here to preview the result, then run <code>/talking-to-dave:configure</code> in a session to apply them for real. Everything regenerates live: rule numbering stays contiguous, the palette lists only enabled anchors, and disabled features leave no dangling references, in any combination. The rest of the page shows you what you just installed.</p>
   </div>
   <div class="cfgwrap">
     <div class="cfg" id="cfgForm">
@@ -462,8 +496,15 @@ details[open] summary{margin-bottom:.3rem}
           <label class="opt"><input type="checkbox" id="optEmdash" checked> Em/en-dash ban</label>
           <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-emdash" aria-label="What the em-dash ban option does">?</button><span class="tip" role="tooltip" id="tip-emdash">Adds the global rule banning em-dashes and en-dashes across replies, code, docs, commits, and issues. Turning it OFF generates no rule about them at all, and the remaining rules renumber.</span></span>
         </div>
+        <div class="customrow">
+          <div class="rowlab">
+            <label for="cfgCustom">Your own rules</label>
+            <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-custom" aria-label="What your own rules do">?</button><span class="tip" role="tooltip" id="tip-custom">One rule per line, in markdown. Each line continues the generated numbered list as a first-class rule, so yours read like the rest instead of an appendix. They are kept verbatim (only trailing whitespace goes, and the em/en-dash ban is never applied to them), they live in your saved config rather than in the generated file, so plugin updates never touch them, and they shape Claude Code only: the claude.ai chat text stays generated.</span></span>
+          </div>
+          <textarea id="cfgCustom" rows="3" spellcheck="false" placeholder="One rule per line, for example: Name the branch in every commit report."></textarea>
+        </div>
         <p class="note">Turning WEATHER or FORECAST off collapses the cluster gracefully: slot numbering, rule text, and the palette all adjust.</p>
-        <p class="note">Your name and ticks are saved in this browser, so a newer copy of this page opens with them already set. <button class="linkbtn" id="cfgReset" type="button">Reset to defaults</button></p>
+        <p class="note" id="cfgNote">Your name, ticks, and rules are saved in this browser, so a newer copy of this page opens with them already set. <button class="linkbtn" id="cfgReset" type="button">Reset to defaults</button></p>
       </fieldset>
     </div>
     <div class="cfgout">
@@ -475,7 +516,7 @@ details[open] summary{margin-bottom:.3rem}
         <p>&#x2B07;&#xFE0F; <strong>A read-only preview of the contract the plugin generates and maintains for you.</strong> Install once:</p>
         <pre>claude plugin marketplace add ToxMox/talking-to-dave
 claude plugin install talking-to-dave@talking-to-dave</pre>
-        <p>Then run <code>/talking-to-dave:configure</code> in any session to apply your ticks for real. Updating later is <code>claude plugin update talking-to-dave</code>: the next session start swaps the installed block exactly, and anything you keep outside its BEGIN and END markers survives untouched.</p>
+        <p>Then run <code>/talking-to-dave:configure</code> in any session to apply your ticks for real. Once the plugin is installed, that command serves this same page from your own machine, with your saved config already filled in and a Save button that writes it: the copy here stays a preview. Updating later is <code>claude plugin update talking-to-dave</code>: the next session start rewrites the installed output style, and because that file is generated in full, nothing of yours lives in it. Your own rules go in the rules box on the left, which keeps them in your saved config and renumbers them into the list above.</p>
       </div>
       <div class="outnote" data-note="ethos" hidden>
         <p>&#x2B07;&#xFE0F; <strong>For Claude chat, not Claude Code.</strong> Paste into claude.ai, Settings, then personal preferences. Chat reads nothing from disk, so it needs its own copy. In a session, <code>/talking-to-dave:chat-preferences</code> prints this same text from your saved config, ready to paste.</p>
@@ -926,7 +967,7 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
   </details>
   <details>
     <summary>Can I trial-run it in one project first?</summary>
-    <p>Yes. Copy the Preview contract output into that project's own <code>CLAUDE.md</code> (in the repo root) instead of <code>~/.claude/CLAUDE.md</code>. It then applies only to sessions in that project. When you like it, move the section to the user-scope file and delete the project copy.</p>
+    <p>Yes. Save the Preview contract output, frontmatter and all, as that project's own <code>.claude/output-styles/talking-to-dave.md</code>: it is the exact file the plugin installs, one directory over. Then set <code>"outputStyle": "talking-to-dave"</code> in that project's <code>.claude/settings.local.json</code>. It then applies only to sessions in that project. When you like it, run <code>/talking-to-dave:configure</code> to install it user-scope and delete the project copy.</p>
   </details>
   <details id="x-chat">
     <summary>Why is the Claude chat version different?</summary>
@@ -935,7 +976,7 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
   </details>
 
   <h3>Undo, in plain words</h3>
-  <p>Run <code>claude plugin uninstall talking-to-dave</code>: hooks and skills go with it, and because the dialog policy is enforced by a hook rather than a settings edit, a banned AskUserQuestion dialog comes back on its own. Then open <code>~/.claude/CLAUDE.md</code> and delete the section between the two presentation-contract marker comments; the plugin never deletes your file content for you. Saved choices sit in the plugin data directory under <code>~/.claude/plugins/data/</code>, safe to delete. If you also pasted the chat ethos, clear that box in your claude.ai account settings.</p>
+  <p>Run <code>claude plugin uninstall talking-to-dave</code>: hooks and skills go with it, and because the dialog policy is enforced by a hook rather than a settings edit, a banned AskUserQuestion dialog comes back on its own. Then delete <code>~/.claude/output-styles/talking-to-dave.md</code> and drop the <code>"outputStyle"</code> line from <code>~/.claude/settings.json</code>; the plugin never edits your settings on the way out. Saved choices sit in the plugin data directory under <code>~/.claude/plugins/data/</code>, safe to delete. If you also pasted the chat ethos, clear that box in your claude.ai account settings.</p>
 
 </section>
 
@@ -952,13 +993,11 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
  * Pure by design: no imports, no fs, no environment reads. Callers pass
  * o.rev (contract revision, normally the plugin version) and o.docsPath
  * (prefix for the two capability-doc references) when the defaults are wrong.
+ * One carrier: buildOutputStyle wraps the shared body in output-style
+ * frontmatter, which is the file the plugin installs and the page previews.
  */
-var CONTRACT_REV="0.2.2";
-  function BEGIN_MARK(rev){
-    return "\u003c!-- BEGIN presentation-contract rev="+(rev||CONTRACT_REV)
-      +". Everything between these markers is replaced wholesale on update, so keep any edits of your own outside them. --\u003e";
-  }
-  function END_MARK(){ return "\u003c!-- END presentation-contract --\u003e"; }
+var CONTRACT_REV="0.4.0";
+  var STYLE_NAME="talking-to-dave";
   var EM={
     ok:"\u2705", rocket:"\u{1F680}", find:"\u{1F50E}", warn:"\u26A0\uFE0F", fail:"\u274C",
     sun:"\u2600\uFE0F", suncloud:"\u{1F324}\uFE0F", storm:"\u26C8\uFE0F",
@@ -1010,7 +1049,10 @@ var CONTRACT_REV="0.2.2";
     return "**Surface.** These rules are measured against the Claude Code **desktop app**. When running anywhere else (terminal CLI, editor extension, SSH, headless, cron), fall back to the stricter subset: one heading tier, "+(o.tasks?"the same glyph-led progress lists (markdown checkbox lists print literally), ":"plain progress counts, ")+"no Run button on fenced commands, plain paths instead of links, and no footnotes or nested quotes.\n\n";
   }
 
-  function buildContract(o){
+  /* The contract text itself, carrier-free: buildOutputStyle wraps it in
+     output-style frontmatter, and the site page previews the same file. The
+     body is pinned byte for byte by the golden fixtures. */
+  function contractBody(o){
     var name=o.name;
     var slots=["STATUS"];
     if(o.weather)slots.push("WEATHER");
@@ -1082,6 +1124,18 @@ var CONTRACT_REV="0.2.2";
 
     rules.push("Reply tiers, and judgment above them. Tier 1, a one-liner: a direct answer with nothing pending gets the answer alone, no "+cnoun+" and no footer. Tier 2, short: "+cnoun+", bold bottom line, bullets when the content is a set, no headers and no fold; the footer follows rule 2, so a short "+(o.forecast?"🟢 ":"all-clear ")+"reply whose body already says what's next may end without one. Tier 3, substantive: the full skeleton above. When the tier is unclear, go up rather than down. Overriding all of it: these are defaults, not a cage. When a reply's content clearly wants a different shape, use that shape without narrating the choice, and never contort content to fit the contract, because the contract exists to serve the scan and not the reverse.");
 
+    /* User-authored rules continue the same numbered list, so they read as
+       first-class rules rather than an appendix. They live in config.json,
+       which is why they survive a plugin update. Verbatim on purpose: only
+       trailing whitespace goes, and the em/en-dash ban is never applied to
+       somebody else's words. */
+    if(o.custom&&o.custom.length){
+      for(var c=0;c<o.custom.length;c++){
+        var extra=String(o.custom[c]).replace(/\s+$/,"");
+        if(extra)rules.push(extra);
+      }
+    }
+
     var descs={
       STATUS:"STATUS (what happened)",
       WEATHER:"WEATHER (how the overall effort is going)",
@@ -1097,8 +1151,7 @@ var CONTRACT_REV="0.2.2";
     }
     intro+=" Palette glyphs may also appear inline at exactly their palette meaning: the pass, fail, and in-progress anchors belong in table cells and in prose wherever a verdict is being reported. The "+cnoun+" stays recognizable by position, not by rarity. Other emojis are allowed sparingly where they genuinely aid scanning, but never in a palette slot, never colliding with a palette meaning, and never so dense the anchors drown. Palette emojis live in replies only, never in file content.";
 
-    var out=BEGIN_MARK(o.rev)+"\n"
-      +"## Talking to "+name+" (presentation contract)\n\n"
+    var out="## Talking to "+name+" (presentation contract)\n\n"
       +"Every reply follows the same skeleton, built for ADHD reading, so "+name+"'s eyes always know where to jump.\n\n"
       +surfaceNote(o)
       +"**Reading conditions.** "+name+" reads in Normal transcript view: tool calls collapse into summaries, reply text shows in full. The reply therefore has to stand alone. Tool calls are the receipt, never the story.\n\n";
@@ -1109,9 +1162,24 @@ var CONTRACT_REV="0.2.2";
       +intro+"\n\n"
       +"|Slot|Emoji|Meaning|\n|-|-|-|\n"
       +paletteRows(o).join("\n")+"\n\n"
-      +EM.warn+" also marks the single load-bearing warning blockquote (`> "+EM.warn+" ...`) when one exists.\n"
-      +END_MARK()+"\n";
+      +EM.warn+" also marks the single load-bearing warning blockquote (`> "+EM.warn+" ...`) when one exists.\n";
     return out;
+  }
+
+  /* Current carrier: a user-scope Claude Code output style, written whole by
+     the sync hook. keep-coding-instructions must be true or Claude Code drops
+     its own software engineering instructions, which this contract only
+     dresses rather than replaces. */
+  function buildOutputStyle(o){
+    return "---\n"
+      +"name: "+STYLE_NAME+"\n"
+      +"description: Reply presentation contract generated by the talking-to-dave plugin\n"
+      +"keep-coding-instructions: true\n"
+      +"---\n\n"
+      +"\u003c!-- Generated by the talking-to-dave plugin, rev "+(o.rev||CONTRACT_REV)+". "
+      +"Hand edits to this file are overwritten on the next sync; put personal additions in the "
+      +"custom rules option of /talking-to-dave:configure. --\u003e\n\n"
+      +contractBody(o);
   }
 
   /* the desktop and web chat app reads nothing from disk, so it needs its own
@@ -1148,6 +1216,13 @@ var CONTRACT_REV="0.2.2";
   }
 
 
+
+  /* Local editor bridge. The published page leaves these null and stays a
+     preview; the plugin's own server (hooks/edit-server.mjs) fills the marker
+     below with an assignment carrying the saved config and the save route, so
+     the same page becomes a live editor with a Save button. */
+  var BRIDGE=null, BRIDGE_CFG=null;
+  
 
   /* ---------- theme toggle ---------- */
   var tbtn=document.getElementById("themeToggle");
@@ -1450,6 +1525,13 @@ var CONTRACT_REV="0.2.2";
 
   /* ---------- contract generator + install paths ---------- */
   var nameEl=document.getElementById("cfgName");
+  var customEl=document.getElementById("cfgCustom");
+  /* one rule per line, trailing whitespace gone, blank lines dropped: exactly
+     what the saved config holds and what the server accepts */
+  function readCustom(){
+    return customEl.value.split(/\r?\n/).map(function(s){return s.replace(/\s+$/,"");})
+      .filter(function(s){return s.length>0;});
+  }
   function readCfg(){
     var g=function(id){return document.getElementById(id).checked;};
     return {
@@ -1458,7 +1540,8 @@ var CONTRACT_REV="0.2.2";
       fold:g("optFold"), decision:g("optDecision"), diff:g("optDiff"),
       emdash:g("optEmdash"),
       visual:g("optVisual"), interactive:g("optInteractive"),
-      dlg:document.getElementById("selDialog").value
+      dlg:document.getElementById("selDialog").value,
+      custom:readCustom()
     };
   }
   /* the rule cards mirror the generated contract: same order, same conditions,
@@ -1509,10 +1592,15 @@ var CONTRACT_REV="0.2.2";
   var OPT_IDS=["optWeather","optForecast","optTasks","optDocs","optFold","optDecision","optDiff","optEmdash","optVisual","optInteractive"];
   function eachOpt(fn){OPT_IDS.forEach(function(id){fn(document.getElementById(id),id);});}
   function saveCfg(){
+    if(BRIDGE)return; /* the editor's origin changes every run, so the store there is useless */
     try{
       var opts={};
       eachOpt(function(el,id){opts[id]=el.checked;});
-      localStorage.setItem(CFG_KEY,JSON.stringify({name:nameEl.value,opts:opts,dlg:document.getElementById("selDialog").value}));
+      localStorage.setItem(CFG_KEY,JSON.stringify({
+        name:nameEl.value, opts:opts,
+        dlg:document.getElementById("selDialog").value,
+        custom:readCustom()
+      }));
     }catch(e){}
   }
   /* every field is type-checked before it is applied: the store is editable by
@@ -1527,12 +1615,20 @@ var CONTRACT_REV="0.2.2";
     var opts=(saved.opts&&typeof saved.opts==="object")?saved.opts:{};
     eachOpt(function(el,id){if(typeof opts[id]==="boolean")el.checked=opts[id];});
     if(saved.dlg==="free"||saved.dlg==="blockers"||saved.dlg==="ban")document.getElementById("selDialog").value=saved.dlg;
+    applyCustom(saved.custom);
+  }
+  function applyCustom(list){
+    if(!list||typeof list.length!=="number")return;
+    var lines=[];
+    for(var i=0;i<list.length;i++){if(typeof list[i]==="string")lines.push(list[i]);}
+    customEl.value=lines.join("\n");
   }
   function resetCfg(){
     try{localStorage.removeItem(CFG_KEY);}catch(e){}
     nameEl.value="Dave";
     eachOpt(function(el){el.checked=true;});
     document.getElementById("selDialog").value="blockers";
+    customEl.value="";
     regen();
     nameEl.focus();
   }
@@ -1565,14 +1661,161 @@ var CONTRACT_REV="0.2.2";
 
   function regen(){
     var o=readCfg();
-    genOut.textContent = outMode==="ethos" ? buildChatPreferences(o) : buildContract(o);
+    genOut.textContent = outMode==="ethos" ? buildChatPreferences(o) : buildOutputStyle(o);
     outNotes.forEach(function(n){n.hidden=n.getAttribute("data-note")!==outMode;});
     renumberRules(o);
     saveCfg();
   }
   document.getElementById("cfgForm").addEventListener("input",regen);
   document.getElementById("cfgReset").addEventListener("click",resetCfg);
-  restoreCfg();
+
+  /* ---------- local editor mode ----------
+     With a bridge the page starts from the config the plugin actually saved
+     and grows a Save button that posts it back; without one (the published
+     page) nothing here runs and the page stays a preview. */
+  function applyBridgeConfig(cfg){
+    if(!cfg||typeof cfg!=="object")return;
+    if(typeof cfg.name==="string")nameEl.value=cfg.name.slice(0,40);
+    eachOpt(function(el,id){
+      /* option ids are optWeather for the weather key, and so on */
+      var key=id.charAt(3).toLowerCase()+id.slice(4);
+      if(typeof cfg[key]==="boolean")el.checked=cfg[key];
+    });
+    if(cfg.dlg==="free"||cfg.dlg==="blockers"||cfg.dlg==="ban")document.getElementById("selDialog").value=cfg.dlg;
+    applyCustom(cfg.custom);
+  }
+  /* Lifetime is tab-shaped: this page heartbeats while it is open, so the
+     server's timeout is really a grace period after the last tab goes away.
+     A failed ping or save means the server is already gone, which is the only
+     way this page enters its closed state besides stopping it on purpose. */
+  var editLive=true, beatTimer=null, pillText=null, pillStop=null;
+  var saveBtn=null, closeBtn=null, saySave=null;
+  var CLOSED_MSG="Editor closed. Run /talking-to-dave:configure to relaunch; your ticks stay on this page until you close it.";
+
+  function ping(){
+    if(!editLive)return;
+    fetch(BRIDGE.pingUrl,{method:"POST"}).then(function(res){
+      if(!res.ok)throw new Error("ping refused");
+    }).catch(function(){markClosed();});
+  }
+  function markClosed(){
+    if(!editLive)return;
+    editLive=false;
+    if(beatTimer){clearInterval(beatTimer); beatTimer=null;}
+    var pill=document.getElementById("editPill");
+    if(pill)pill.className="editpill closed";
+    if(pillText)pillText.textContent=CLOSED_MSG;
+    if(pillStop)pillStop.hidden=true;
+    if(closeBtn)closeBtn.hidden=true;
+    if(saveBtn){
+      saveBtn.disabled=true;
+      saveBtn.title="The local editor has closed, so there is nowhere to save to.";
+    }
+    if(saySave)saySave(CLOSED_MSG,"bad");
+  }
+  function stopEditor(){
+    if(!editLive)return markClosed();
+    fetch(BRIDGE.stopUrl,{method:"POST"}).catch(function(){}).then(function(){markClosed();});
+  }
+  function buildPill(){
+    var pill=document.createElement("div");
+    pill.className="editpill"; pill.id="editPill";
+    var dot=document.createElement("span");
+    dot.className="dot"; dot.setAttribute("aria-hidden","true");
+    pillText=document.createElement("span");
+    pillText.className="ptext";
+    pillText.setAttribute("role","status");
+    pillText.setAttribute("aria-live","polite");
+    pillText.textContent="Editor live";
+    pillStop=document.createElement("button");
+    pillStop.type="button"; pillStop.className="pstop"; pillStop.textContent="Stop";
+    pillStop.setAttribute("aria-label","Stop the local editor now");
+    pillStop.addEventListener("click",stopEditor);
+    pill.appendChild(dot); pill.appendChild(pillText); pill.appendChild(pillStop);
+    document.body.appendChild(pill);
+    document.body.className="haspill";
+  }
+  /* 30s beats keep it alive while open; the extra events cover a laptop that
+     slept through several of them */
+  function startHeartbeat(){
+    ping();
+    beatTimer=setInterval(ping,30000);
+    document.addEventListener("visibilitychange",function(){if(!document.hidden)ping();});
+    window.addEventListener("focus",ping);
+    window.addEventListener("online",ping);
+  }
+  function buildSaveUi(){
+    var row=document.createElement("p");
+    row.className="saverow";
+    saveBtn=document.createElement("button");
+    saveBtn.type="button"; saveBtn.className="inlinebtn"; saveBtn.id="cfgSave";
+    saveBtn.textContent="Save to Claude Code";
+    closeBtn=document.createElement("button");
+    closeBtn.type="button"; closeBtn.className="inlinebtn"; closeBtn.id="cfgDone";
+    closeBtn.textContent="Done, close the editor";
+    closeBtn.hidden=true;
+    closeBtn.addEventListener("click",stopEditor);
+    var msg=document.createElement("span");
+    msg.className="msg"; msg.id="saveMsg"; msg.setAttribute("role","status");
+    row.appendChild(saveBtn); row.appendChild(closeBtn); row.appendChild(msg);
+    document.getElementById("cfgForm").appendChild(row);
+    saySave=function(text,cls){
+      msg.textContent=text;
+      msg.className="msg"+(cls?" "+cls:"");
+    };
+    saveBtn.addEventListener("click",function(){
+      if(!editLive)return saySave(CLOSED_MSG,"bad");
+      saveBtn.disabled=true;
+      closeBtn.hidden=true;
+      saySave("Saving...","");
+      var reached=false;
+      fetch(BRIDGE.saveUrl,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(readCfg())
+      }).then(function(res){
+        reached=true;
+        return res.json().catch(function(){return {};}).then(function(body){
+          if(!res.ok)throw new Error(body.error||("save refused with status "+res.status));
+          return body;
+        });
+      }).then(function(body){
+        saySave("Saved at rev "+(body.rev||"?")+". It takes effect in your next Claude Code session or after /clear.","ok");
+        closeBtn.hidden=false; /* keeping the editor open stays the default */
+      }).catch(function(err){
+        if(!reached)return markClosed();
+        saySave("Not saved: "+(err&&err.message?err.message:"the save was refused."),"bad");
+      }).then(function(){
+        if(editLive)saveBtn.disabled=false;
+      });
+    });
+  }
+  if(BRIDGE){
+    applyBridgeConfig(BRIDGE_CFG);
+    buildPill();
+    buildSaveUi();
+    startHeartbeat();
+    var note=document.getElementById("cfgNote");
+    if(note)note.firstChild.nodeValue="Editing your installed config. Save writes it and regenerates the output style right away. The editor stays live while this tab is open, closes itself about ten minutes after you leave, and Stop closes it now. ";
+    var cnote=document.querySelector('.outnote[data-note="contract"]');
+    if(cnote){
+      var pre=cnote.querySelector("pre");
+      if(pre)pre.parentNode.removeChild(pre);
+      var ps=cnote.querySelectorAll("p");
+      if(ps[0])ps[0].innerHTML="&#x2B07;&#xFE0F; <strong>A live preview of the contract this machine installs for you.</strong> It regenerates as you tick, and Save applies it for real.";
+      if(ps[1])ps[1].parentNode.removeChild(ps[1]);
+    }
+    var lede=document.querySelector("#sec-install .lede");
+    if(lede)lede.innerHTML="This editor is served locally by the plugin, editing the contract installed at <code>~/.claude/output-styles/talking-to-dave.md</code>, which governs <strong>every project</strong> on this machine. Tick options to preview the result, then Save to apply them for real. Everything regenerates live: rule numbering stays contiguous, the palette lists only enabled anchors, and disabled features leave no dangling references, in any combination.";
+    var ih=document.getElementById("h-install");
+    if(ih)ih.innerHTML='<span class="skick">Configure</span>Your installed contract, ready to edit';
+    /* both lists: the hero table of contents and the sticky nav's clone */
+    Array.prototype.forEach.call(document.querySelectorAll('.toc a[href="#sec-install"]'),function(a){
+      a.textContent="Configure";
+    });
+  }else{
+    restoreCfg();
+  }
   regen();
 
   /* ---------- copy palette as markdown ---------- */
