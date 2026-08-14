@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Docs: every plugin command in the README and on the site now uses the qualified `talking-to-dave@talking-to-dave` form (a bare plugin name was observed failing the CLI's registry lookup), and the uninstall instructions cover `--keep-data`, since a plain uninstall deletes the plugin data directory and the saved config with it.
+
 ## 0.5.0 (2026-08-14)
 
 - Fix: the local editor's post-save report is honest. When the rendered style was already identical (the writer correctly skips those), the server line and the page message now say "already current" instead of claiming a regeneration; the save response carries a `changed` flag. Observed live on a 0.4.0 install whose pre-queue config merged to the same bytes the save then wrote explicitly.
