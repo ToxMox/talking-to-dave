@@ -92,7 +92,7 @@ Line 1 carries three slots in fixed order, and the sample above opens with them:
 |💤|parked ideas|zero obligation; work worth recommending never gets it|
 |⚠️|warnings|marks the single load-bearing `> ⚠️` blockquote when one exists|
 
-Beyond the anchors, the contract covers footer mechanics (stable question IDs, complete outstanding set every time, no silently applied defaults), decision tables you answer with a two-character token, glyph-led progress lists, a must-read/reference fold for long replies, markdown devices measured against what the app actually renders, and a global ban on em and en dashes. The [site](https://toxmox.github.io/talking-to-dave/) previews every rule with your own options applied.
+Beyond the anchors, the contract covers footer mechanics (stable question IDs, told-once asks, no silently applied defaults), the question queue (an unanswered question becomes a session-scoped file, a linked names line that opens it in the sidebar, and a click-to-expand answer panel, instead of being re-asked every reply), decision tables you answer with a two-character token, glyph-led progress lists, a must-read/reference fold for long replies, markdown devices measured against what the app actually renders, and a global ban on em and en dashes. The [site](https://toxmox.github.io/talking-to-dave/) previews every rule with your own options applied.
 
 ## Who it is for
 
@@ -134,7 +134,7 @@ Nothing leaves the machine, and a save survives the server: the config and the s
 
 |Skill|What it does|
 |-|-|
-|`/talking-to-dave:configure`|Set up or change the contract in the local browser editor, or by interview when there is no browser: name, ten toggles, your own custom rules, dialog policy; saves and installs|
+|`/talking-to-dave:configure`|Set up or change the contract in the local browser editor, or by interview when there is no browser: name, eleven toggles, question-queue mode, dialog policy, your own custom rules; saves and installs|
 |`/talking-to-dave:sync`|Force a regenerate now, make sure `outputStyle` selects it, and report what the sync did|
 |`/talking-to-dave:chat-preferences`|Print the claude.ai personal-preferences text for pasting into chat settings|
 |`/talking-to-dave:measure`|Re-run the display-capability test cards and report deltas against the shipped docs|
@@ -147,6 +147,7 @@ Nothing leaves the machine, and a save survives the server: the config and the s
 |`~/.claude/settings.json`|one key, `"outputStyle": "talking-to-dave"`; every other setting is preserved|
 |`~/.claude/settings.json.bak` (then `.bak1`, ...)|copy taken before that key is written, which normally happens once|
 |`<data>/config.json`|your saved options, custom rules included|
+|`.claude/questions/<session-id>/` (in each project)|the session's question queue: one markdown file per registered question plus its index. Untracked working state the model never stages; add `.claude/questions/` to your repo's ignore rules if the git-status noise bothers you|
 |`<data>/editor-secret`|the local editor's URL secret, so the link is stable; delete it to rotate|
 |`<data>/claude-chat-preferences.md`|the claude.ai text as last exported|
 |`<data>/sync.log`|one line per sync decision, including errors|

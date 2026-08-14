@@ -61,6 +61,12 @@ from a cited upstream source. INFERRED means reasoned without direct observation
 | AskUserQuestion dialog | GOOD | multi-question, multiSelect, and Other free text all work; answers return structured | MEASURED (live reply 2026-08-11) |
 | SendUserFile `display:'render'` | WEAK | no inline render: a small attachment card; click opens the Browser pane | MEASURED (live reply 2026-08-11) |
 | widget state readback (`read_widget_context`) | NONE | returns "no widget context available" for visualize widgets | MEASURED (2026-08-11) |
+| widget link to a local file (`openLink('file:///...')` and `<a href="file:///...">`) | NONE | silently dropped: no pane, no dialog, nothing; the widget sandbox routes only https links, which get the external-link confirmation dialog | MEASURED (live reply 2026-08-14) |
+| widget anchor with a relative path (`href="README.md"`, `href="../../Users/..."`) | NONE | intercepted as a web URL: the external-link dialog appears and the file pane never opens; `openLink` with a relative path is silently dropped | MEASURED (live reply 2026-08-14) |
+| widget file-open, any form | NONE | confirmed by documentation, not only probes: the `ui/open-link` contract accepts only https origins and registered app schemes (`file:`/`data:`/`blob:` explicitly rejected), the widget host API has no file-open or pane method, and the desktop docs open the file pane only from transcript path clicks | DOCUMENTED (claude.com connectors external-links doc, MCP Apps SDK, code.claude.com desktop doc, 2026-08-14) |
+| reply link traversing out of the working directory (`[f.md](../../Users/...)`) | GOOD | `../` traversal resolves: a session-scratchpad file opens in the file pane exactly like a repo path | MEASURED (live reply 2026-08-14) |
+| relative link inside a pane-rendered markdown file | GOOD | navigates the file pane to the target file, so a generated index works as a jump table | MEASURED (live reply 2026-08-14) |
+| reply link to a moved or deleted file | WEAK | the pane opens a "couldn't read this file" card naming the path; nothing else happens | MEASURED (live reply 2026-08-14) |
 
 ## 3. Devices worth using
 

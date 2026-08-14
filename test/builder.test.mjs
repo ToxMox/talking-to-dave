@@ -17,6 +17,7 @@ const base = {
   name: 'Dave',
   weather: true, forecast: true, tasks: true, docs: true, fold: true,
   decision: true, diff: true, emdash: true, visual: true, interactive: true,
+  queue: 'widgets', serial: false,
   dlg: 'blockers',
 };
 const cases = {
@@ -30,7 +31,13 @@ const customRules = [
   'Ship notes. When a change lands, name the branch and say whether CI is green.',
   'Never guess at pricing or quotas: look the number up and cite the line you read it from.',
 ];
-const styleCases = { ...cases, 'custom-rules': { ...base, custom: customRules } };
+const styleCases = {
+  ...cases,
+  'custom-rules': { ...base, custom: customRules },
+  'queue-off': { ...base, queue: 'off' },
+  'queue-text': { ...base, queue: 'text' },
+  'queue-serial': { ...base, serial: true },
+};
 
 /* The output style is the only carrier the plugin installs, so its whole file
  * (frontmatter, generated-file stamp, contract body) is what gets pinned. */
@@ -92,7 +99,43 @@ test('docsPath override rewrites both capability-doc references', () => {
   const c = buildOutputStyle({ ...base, docsPath: '/plug/docs/' });
   assert.ok(c.includes('`/plug/docs/desktop-capabilities.md`'));
   assert.ok(c.includes('`/plug/docs/tui-capabilities.md`'));
+  assert.ok(c.includes('`/plug/docs/question-file.md`'));
   assert.ok(!c.includes('`docs/desktop-capabilities.md`'));
+});
+
+test('the queue mode swaps footer machinery whole', () => {
+  const on = buildOutputStyle(base);
+  assert.ok(on.includes('The question queue.'));
+  assert.ok(on.includes('The bar is a widget'));
+  assert.ok(on.includes('told in full exactly once'));
+  assert.ok(on.includes('|questions|❓|'));
+  assert.ok(!on.includes('complete set of what is outstanding'));
+  assert.ok(!on.includes('waiting count'));
+  assert.ok(!on.includes('One topic at a time (serial)'));
+  const off = buildOutputStyle({ ...base, queue: 'off' });
+  assert.ok(!off.includes('The question queue.'));
+  assert.ok(!off.includes('|questions|'));
+  assert.ok(off.includes('complete set of what is outstanding'));
+  const text = buildOutputStyle({ ...base, queue: 'text' });
+  assert.ok(text.includes('The question queue.'));
+  assert.ok(text.includes('Answering is typed'));
+  assert.ok(!text.includes('The bar is a widget'));
+  const plain = buildOutputStyle({ ...base, forecast: false });
+  assert.ok(plain.includes('the question queue (next rule)'));
+  assert.ok(plain.includes('The question queue.'));
+});
+
+test('serial adds the one-topic discipline in both queue modes', () => {
+  const serial = buildOutputStyle({ ...base, serial: true });
+  assert.ok(serial.includes('One topic at a time (serial)'));
+  const serialText = buildOutputStyle({ ...base, queue: 'text', serial: true });
+  assert.ok(serialText.includes('One topic at a time (serial)'));
+  assert.ok(!buildOutputStyle({ ...base, queue: 'off', serial: true }).includes('One topic at a time'));
+});
+
+test('legacy boolean queue values coerce to the mode strings', () => {
+  assert.equal(buildOutputStyle({ ...base, queue: true }), buildOutputStyle(base));
+  assert.equal(buildOutputStyle({ ...base, queue: false }), buildOutputStyle({ ...base, queue: 'off' }));
 });
 
 test('sanitizeName strips markdown and table metacharacters', () => {

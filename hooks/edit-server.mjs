@@ -42,10 +42,11 @@ import { execFileSync } from 'node:child_process';
 import { sanitizeName } from '../lib/builder.js';
 import { pluginRoot, pluginVersion, dataDir, loadConfig, DEFAULT_CONFIG, assemblePage } from '../lib/node-helpers.mjs';
 
-/* the ten toggles, the only booleans a saved config may carry */
-const BOOLS = ['weather', 'forecast', 'tasks', 'docs', 'fold', 'decision', 'diff', 'emdash', 'visual', 'interactive'];
+/* the eleven toggles, the only booleans a saved config may carry */
+const BOOLS = ['weather', 'forecast', 'tasks', 'docs', 'fold', 'decision', 'diff', 'emdash', 'visual', 'interactive', 'serial'];
 const DLG = ['blockers', 'free', 'ban'];
-const KEYS = new Set(['name', 'dlg', 'custom', ...BOOLS]);
+const QUEUE = ['widgets', 'text', 'off'];
+const KEYS = new Set(['name', 'dlg', 'queue', 'custom', ...BOOLS]);
 const MAX_BODY = 256 * 1024;
 
 /* Chosen from the dynamic range and hard-coded so the link is the same every
@@ -291,12 +292,14 @@ function validate(raw) {
   for (const key of Object.keys(raw)) if (!KEYS.has(key)) return null;
   if (typeof raw.name !== 'string') return null;
   if (!DLG.includes(raw.dlg)) return null;
+  if (!QUEUE.includes(raw.queue)) return null;
   const cfg = { name: sanitizeName(raw.name) };
   for (const key of BOOLS) {
     if (typeof raw[key] !== 'boolean') return null;
     cfg[key] = raw[key];
   }
   cfg.dlg = raw.dlg;
+  cfg.queue = raw.queue;
   const custom = raw.custom === undefined ? [] : raw.custom;
   if (!Array.isArray(custom)) return null;
   cfg.custom = [];
