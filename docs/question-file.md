@@ -124,6 +124,12 @@ While open questions exist, every substantive reply ends with both, the
 names line first, then the bar. An empty queue renders neither, and tier-1
 one-liners stay bare as ever.
 
+Ordering is mechanical, not stylistic: tool output renders where the call
+occurs, so the bar's widget call goes in the SAME assistant message as the
+reply text, after the text block, and anything after the bar is at most one
+minimal closing line. A bar emitted from an earlier message renders above
+the reply and reads as noise (observed 2026-08-14).
+
 **The names line** is reply text, because only reply-text links open the
 file pane (no link form inside a widget can, measured 2026-08-14, while
 reply-text links resolve `../` traversal out of the working directory).
@@ -171,4 +177,8 @@ With the queue on, the classic footer machinery is retired: no restating
 the complete outstanding set, no waiting tallies, no compression tables
 past three items. The names line and the files are the complete set and
 the memory. Blocking questions still block their work until answered, and
-a default is only ever a proposal, never auto-applied.
+a default is only ever a proposal, never auto-applied. When a preference
+gates output produced in the same turn, the output renders provisionally
+and says which way it went while the question stays open, and a later
+answer redoes it: a provisional render is not a default applied by
+silence, which stays forbidden.

@@ -109,6 +109,7 @@ test('the queue mode swaps footer machinery whole', () => {
   const on = buildOutputStyle(base);
   assert.ok(on.includes('The question queue.'));
   assert.ok(on.includes('The bar is a widget'));
+  assert.ok(on.includes('minimal closing line'), 'widgets mode carries the ordering rule');
   assert.ok(on.includes('told in full exactly once'));
   assert.ok(on.includes('|questions|❓|'));
   assert.ok(!on.includes('complete set of what is outstanding'));
@@ -122,6 +123,7 @@ test('the queue mode swaps footer machinery whole', () => {
   assert.ok(text.includes('The question queue.'));
   assert.ok(text.includes('Answering is typed'));
   assert.ok(!text.includes('The bar is a widget'));
+  assert.ok(!text.includes('minimal closing line'));
   const plain = buildOutputStyle({ ...base, forecast: false });
   assert.ok(plain.includes('the question queue (next rule)'));
   assert.ok(plain.includes('The question queue.'));
@@ -133,6 +135,15 @@ test('serial adds the one-topic discipline in both queue modes', () => {
   const serialText = buildOutputStyle({ ...base, queue: 'text', serial: true });
   assert.ok(serialText.includes('One topic at a time (serial)'));
   assert.ok(!buildOutputStyle({ ...base, queue: 'off', serial: true }).includes('One topic at a time'));
+});
+
+test('every footer variant names the provisional-render state exactly once', () => {
+  const variants = [base, { ...base, queue: 'off' }, { ...base, forecast: false }, { ...base, forecast: false, queue: 'off' }];
+  for (const cfg of variants) {
+    const s = buildOutputStyle(cfg);
+    assert.equal((s.match(/render provisionally/g) || []).length, 1,
+      'forecast=' + cfg.forecast + ' queue=' + cfg.queue);
+  }
 });
 
 test('the ids toggle swaps the naming discipline whole', () => {

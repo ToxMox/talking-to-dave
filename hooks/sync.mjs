@@ -53,12 +53,14 @@ function log(msg) {
 
 /* The harness can spawn several SessionStart hook processes for one event
    (observed live: 3-4 complete runs milliseconds apart on a single hooks.json
-   registration), so advisory output debounces: true when another hook-mode run
-   touched the stamp inside the window. Touch-then-check is best effort under
-   truly simultaneous spawns. Real writes are never gated by this. */
-function recentHookRun() {
+   registration), so advisory output debounces: true when another flagless sync
+   run touched the stamp inside the window. Any flagless run touches it, the
+   editor-triggered one included, which is why the stamp is named last-sync and
+   not last-hook-run. Touch-then-check is best effort under truly simultaneous
+   spawns. Real writes are never gated by this. */
+function recentSync() {
   try {
-    const p = join(dataDir(), 'last-hook-run');
+    const p = join(dataDir(), 'last-sync');
     const fresh = existsSync(p) && Date.now() - statSync(p).mtimeMs < 20000;
     writeFileSync(p, '');
     return fresh;
@@ -105,7 +107,7 @@ function main() {
 
   // Advisory output (the nudges and warnings below) prints once per burst of
   // duplicate hook spawns; --install is an explicit action and never debounced.
-  const quiet = !args.has('--install') && recentHookRun();
+  const quiet = !args.has('--install') && recentSync();
 
   // Staleness nudge: the exported copy is what the user last pasted into
   // claude.ai; never overwrite it here, only compare.

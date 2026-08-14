@@ -458,11 +458,11 @@ details[open] summary{margin-bottom:.3rem}
         <div class="namerow">
           <label for="selQueue">Question queue</label>
           <select id="selQueue" aria-label="Question queue mode">
-            <option value="widgets" selected>full (links + widgets)</option>
-            <option value="text">text only (links, typed answers)</option>
+            <option value="widgets">full (links + widgets)</option>
+            <option value="text" selected>text only (links, typed answers)</option>
             <option value="off">off (classic footer)</option>
           </select>
-          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-queue" aria-label="What the question queue mode does">?</button><span class="tip" role="tooltip" id="tip-queue">A question is asked in full exactly once; one that outlives its message registers in a session-scoped file queue, and later replies carry a linked names line that opens each question in the sidebar. Full mode adds the collapsible answer panel with buttons; text mode keeps the same queue with typed answers only; off restores the classic footer with the complete outstanding set restated every reply, waiting counts included.</span></span>
+          <span class="tipwrap"><button class="qmark" type="button" aria-expanded="false" aria-describedby="tip-queue" aria-label="What the question queue mode does">?</button><span class="tip" role="tooltip" id="tip-queue">A question is asked in full exactly once; one that outlives its message registers in a session-scoped file queue, and later replies carry a linked names line that opens each question in the sidebar. Text mode (the default) keeps typed answers only. Full mode adds a collapsible answer panel with buttons, and that convenience costs context: the bar re-emits roughly 600-700 tokens of markup on every substantive reply while any question is open, and every copy persists in the transcript for the rest of the session. Off restores the classic footer with the complete outstanding set restated every reply, waiting counts included.</span></span>
         </div>
         <div class="optrow">
           <label class="opt"><input type="checkbox" id="optSerial"> Serial questions (one topic at a time)</label>
@@ -861,13 +861,13 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
       </div>
       <div class="rulecard" role="listitem" data-rule="needsyou">
         <div class="rhead"><span class="rnum" aria-hidden="true">2</span><h4>The footer: four states, always last</h4></div>
-        <p>The final section of a substantive reply, never a buried question, always agreeing with the FORECAST slot. &#x1F64B;, &#x1F51C;, and &#x1F3C1; always close with their footer; only &#x1F7E2; may skip it, and only on a short reply whose body already says what's next, so a missing footer is itself a claim: nothing outstanding, nothing hidden. A Needs-you item is the question being asked right now, told in full exactly once: the ask, short stakes, blocking or preference, and the option tokens with consequences. Everything else outstanding lives in the question queue (rule 3) and appears only as its status bar. Going unanswered resolves nothing: a blocking question keeps its work blocked, and a default is only ever a proposal, never auto-applied.</p>
+        <p>The final section of a substantive reply, never a buried question, always agreeing with the FORECAST slot. &#x1F64B;, &#x1F51C;, and &#x1F3C1; always close with their footer; only &#x1F7E2; may skip it, and only on a short reply whose body already says what's next, so a missing footer is itself a claim: nothing outstanding, nothing hidden. A Needs-you item is the question being asked right now, told in full exactly once: the ask, short stakes, blocking or preference, and the option tokens with consequences. Everything else outstanding lives in the question queue (rule 3) and appears only as its status bar. Going unanswered resolves nothing: a blocking question keeps its work blocked, and a default is only ever a proposal, never auto-applied. A preference gating output produced in the same turn renders provisionally and stays open; a later answer redoes it.</p>
         <div class="rex"><div class="reply"><p>&#x1F64B; <strong>Needs you:</strong></p><ol><li><strong>Q1</strong>: rename the flag before release? Blocks the tag. (yes / no / suggest)</li></ol><p class="dimtx">or, when a decision is approaching:</p><p>&#x1F51C; <strong>Nothing needed yet:</strong> the flag-name call arrives when CI goes green.</p><p class="dimtx">or, green light:</p><p>&#x1F7E2; <strong>Next up:</strong> the soak test runs unattended; results follow when it reports.</p><p class="dimtx">or, closed:</p><p>&#x1F3C1; <strong>Done.</strong> &#x1F4A4; <strong>Later, if you want:</strong> a dark-mode pass on the dashboard.</p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="queue">
         <div class="rhead"><span class="rnum" aria-hidden="true">3</span><h4>The question queue</h4></div>
-        <p>A question is told in full exactly once. One that outlives the message that asked it registers lazily as a markdown file in the session-scoped queue (an ask answered straight away never touches disk); files never move, so old links keep resolving, and each change regenerates an index of the open set. Every substantive reply then ends with a names line (bolded count linking the index, blockers-first names linking their files in the sidebar) and a collapsed bar that unfolds in place into the answer panel: rows with answer buttons whose inserted text ends with ". " and a drop control. Context is never embedded; it sits one sidebar click away. The queue survives resume and compaction, dies with the session, and a durable decision graduates to a docs note or memory when answered.</p>
-        <div class="rex"><div class="reply"><p class="dimtx">every reply ends with the names line plus the collapsed bar:</p><p>&#x2753; <strong>5 open questions</strong>: Q4 store shape &#xB7; Q7 bar cadence &#xB7; Q9 tag glyph and 2 more</p><p class="dimtx">count and names are sidebar links; the bar beneath unfolds in place to answer buttons, no message sent</p></div></div>
+        <p>A question is told in full exactly once. One that outlives the message that asked it registers lazily as a markdown file in the session-scoped queue (an ask answered straight away never touches disk); files never move, so old links keep resolving, and each change regenerates an index of the open set. Every substantive reply then ends with a names line (bolded count linking the index, blockers-first names linking their files in the sidebar); answers are typed by default. Opt-in widgets mode adds a collapsed bar below the reply text that unfolds in place into the answer panel (rows with answer buttons whose inserted text ends with ". " and a drop control), and that convenience costs context: the bar re-emits its full markup on every substantive reply while any question is open. Context is never embedded; it sits one sidebar click away. The queue survives resume and compaction, dies with the session, and a durable decision graduates to a docs note or memory when answered.</p>
+        <div class="rex"><div class="reply"><p class="dimtx">every reply ends with the names line:</p><p>&#x2753; <strong>5 open questions</strong>: Q4 store shape &#xB7; Q7 bar cadence &#xB7; Q9 tag glyph and 2 more</p><p class="dimtx">count and names are sidebar links; in widgets mode a bar beneath unfolds in place to answer buttons, no message sent</p></div></div>
       </div>
       <div class="rulecard" role="listitem" data-rule="counts">
         <div class="rhead"><span class="rnum" aria-hidden="true">4</span><h4>Counts and progress lists</h4></div>
@@ -1429,7 +1429,7 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
     eachOpt(function(el){el.checked=true;});
     document.getElementById("optSerial").checked=false;
     document.getElementById("selDialog").value="blockers";
-    document.getElementById("selQueue").value="widgets";
+    document.getElementById("selQueue").value="text";
     customEl.value="";
     regen();
     nameEl.focus();
@@ -1484,6 +1484,11 @@ claude plugin install talking-to-dave@talking-to-dave</pre>
       if(typeof cfg[key]==="boolean")el.checked=cfg[key];
     });
     if(cfg.dlg==="free"||cfg.dlg==="blockers"||cfg.dlg==="ban")document.getElementById("selDialog").value=cfg.dlg;
+    /* legacy boolean queue values coerce the same way the builder does; without
+       this restore the select silently showed the built-in default, and a save
+       would switch a user's saved mode to it */
+    var q=cfg.queue===true?"widgets":cfg.queue===false?"off":cfg.queue;
+    if(q==="widgets"||q==="text"||q==="off")document.getElementById("selQueue").value=q;
     applyCustom(cfg.custom);
   }
   /* Lifetime is tab-shaped: this page heartbeats while it is open, so the

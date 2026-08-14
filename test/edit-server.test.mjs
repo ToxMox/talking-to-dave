@@ -5,7 +5,7 @@
  * the end of its test. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -209,9 +209,12 @@ test('the name is sanitized the same way the builder does it', async (t) => {
 test('a save that changes nothing reports the style as already current', async (t) => {
   const sb = await start(t, { name: 'Probe' });
   assert.equal((await (await sb.save(VALID)).json()).changed, true);
+  const cfgPath = join(sb.data, 'config.json');
+  const mtimeBefore = statSync(cfgPath).mtimeMs;
   const body = await (await sb.save(VALID)).json();
   assert.equal(body.ok, true);
   assert.equal(body.changed, false, 'an identical re-save must not claim a write');
+  assert.equal(statSync(cfgPath).mtimeMs, mtimeBefore, 'identical bytes must not rewrite config.json');
   assert.ok(sb.stdout().includes('output style already current at rev ' + version), sb.stdout());
   assert.ok(sb.stdout().includes('output style regenerated at rev ' + version), 'the first save still announces its write: ' + sb.stdout());
 });

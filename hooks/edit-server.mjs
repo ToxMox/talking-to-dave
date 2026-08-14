@@ -274,7 +274,12 @@ function save(req, res) {
     try {
       const dir = dataDir();
       mkdirSync(dir, { recursive: true });
-      writeFileSync(join(dir, 'config.json'), JSON.stringify(cfg, null, 2) + '\n');
+      const file = join(dir, 'config.json');
+      const out = JSON.stringify(cfg, null, 2) + '\n';
+      /* identical bytes skip the write, so mtime moves only on a real change */
+      let same = false;
+      try { same = readFileSync(file, 'utf8') === out; } catch {}
+      if (!same) writeFileSync(file, out);
       sync = execFileSync(process.execPath, [syncScript], { encoding: 'utf8' });
     } catch (e) {
       return sendJson(res, 500, { error: 'the save failed: ' + ((e && e.message) || e) });
