@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.5.1 (2026-08-14)
 
+- The question queue defaults to `text` mode: names line and typed answers, no widget bar. Widgets mode stays available as an opt-in, and the configurator and the configure interview now say what it costs: roughly 600-700 tokens of bar markup re-emitted on every substantive reply while any question is open, every copy persisting in the transcript. Configs saved with an explicit mode keep it.
+- The contract names the provisional-render state (live-audit finding): when a preference gates output produced in the same turn, the output renders provisionally and says which way it went while the question stays open, and a later answer redoes it. A provisional render is not a default applied by silence, which stays forbidden. Added to all four footer variants and to `docs/question-file.md`.
+- The widgets-mode rule states the bar's ordering mechanically (live-audit finding: a bar emitted from an earlier message rendered above the reply): the bar's widget call shares the reply's assistant message, after the text block, with at most one minimal closing line after it.
+- Fix: the local editor restores the saved queue mode into its dropdown, coercing legacy boolean values. It previously always showed the built-in default, so a save from the editor could silently switch a user's saved queue mode.
+- Fix: a byte-identical editor save no longer rewrites `config.json`, so its mtime moves only on real change (live-audit finding).
+- The debounce stamp is renamed `last-hook-run` to `last-sync`, since any flagless sync run touches it, the editor-triggered one included (live-audit finding: the old name promised narrower than the file delivered). A leftover `last-hook-run` file is inert and safe to delete.
 - Docs: every plugin command in the README and on the site now uses the qualified `talking-to-dave@talking-to-dave` form (a bare plugin name was observed failing the CLI's registry lookup), and the uninstall instructions cover `--keep-data`, since a plain uninstall deletes the plugin data directory and the saved config with it.
 
 ## 0.5.0 (2026-08-14)
