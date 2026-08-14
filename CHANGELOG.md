@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-08-14)
 
 - Fix: the local editor's post-save report is honest. When the rendered style was already identical (the writer correctly skips those), the server line and the page message now say "already current" instead of claiming a regeneration; the save response carries a `changed` flag. Observed live on a 0.4.0 install whose pre-queue config merged to the same bytes the save then wrote explicitly.
 - Fix: sync is quiet when nothing happened. A no-op style compare and an already-selected outputStyle log nothing, and the advisory nudges (stale chat preferences, unselected style) debounce behind a 20-second stamp, so the harness spawning several SessionStart hook processes for one event (observed live: 3-4 runs milliseconds apart on a single hooks.json registration) yields one set of messages, best effort. Real writes always announce themselves.
